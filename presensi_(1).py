@@ -7,14 +7,10 @@ import gspread
 from google.oauth2.service_account import Credentials
 
 # ============================================================
-# INISIALISASI SESSION STATE — PALING ATAS
+# INISIALISASI SESSION STATE
 # ============================================================
-if 'makul' not in st.session_state:
-    st.session_state['makul'] = "Belum Diatur"
-if 'pertemuan' not in st.session_state:
-    st.session_state['pertemuan'] = "-"
-if 'semester' not in st.session_state:
-    st.session_state['semester'] = "-"
+if 'dosen_login' not in st.session_state:
+    st.session_state['dosen_login'] = False
 
 # ============================================================
 # CONFIG HALAMAN
@@ -26,7 +22,7 @@ st.set_page_config(
 )
 
 # ============================================================
-# CSS PREMIUM
+# CSS
 # ============================================================
 st.markdown("""
     <style>
@@ -84,7 +80,6 @@ st.markdown("""
         font-weight: 700 !important;
         width: 100% !important;
         box-shadow: 0 8px 20px rgba(79,70,229,0.25) !important;
-        transition: all 0.3s ease !important;
     }
     .clock-container {
         background-color: #FFFbeb;
@@ -113,42 +108,92 @@ def get_sheet():
         st.secrets["gcp_service_account"], scopes=SCOPES
     )
     client = gspread.authorize(creds)
-    sheet  = client.open_by_key(SHEET_ID)
-    return sheet
+    return client.open_by_key(SHEET_ID)
 
+# ============================================================
+# FUNGSI BACA / TULIS STATUS KELAS KE GOOGLE SHEETS
+# Sheet khusus bernama "STATUS_KELAS" menyimpan info kelas aktif
+# ============================================================
+STATUS_SHEET = "STATUS_KELAS"
+
+def baca_status_kelas():
+    """Baca status kelas aktif dari Google Sheets."""
+    try:
+        sheet = get_sheet()
+        try:
+            ws = sheet.worksheet(STATUS_SHEET)
+        except gspread.exceptions.WorksheetNotFound:
+            # Buat worksheet baru kalau belum ada
+            ws = sheet.add_worksheet(title=STATUS_SHEET, rows="5", cols="5")
+            ws.append_row(["makul", "semester", "pertemuan", "aktif"])
+            ws.append_row(["Belum Diatur", "-", "-", "0"])
+
+        data = ws.get_all_records()
+        if data:
+            row = data[0]
+            return {
+                "makul":     row.get("makul", "Belum Diatur"),
+                "semester":  row.get("semester", "-"),
+                "pertemuan": row.get("pertemuan", "-"),
+                "aktif":     str(row.get("aktif", "0")) == "1"
+            }
+    except Exception:
+        pass
+    return {"makul": "Belum Diatur", "semester": "-", "pertemuan": "-", "aktif": False}
+
+def tulis_status_kelas(makul, semester, pertemuan, aktif=True):
+    """Simpan status kelas aktif ke Google Sheets."""
+    sheet = get_sheet()
+    try:
+        ws = sheet.worksheet(STATUS_SHEET)
+    except gspread.exceptions.WorksheetNotFound:
+        ws = sheet.add_worksheet(title=STATUS_SHEET, rows="5", cols="5")
+        ws.append_row(["makul", "semester", "pertemuan", "aktif"])
+
+    # Hapus data lama, tulis ulang
+    ws.clear()
+    ws.append_row(["makul", "semester", "pertemuan", "aktif"])
+    ws.append_row([makul, semester, pertemuan, "1" if aktif else "0"])
+
+def tutup_kelas():
+    """Nonaktifkan kelas."""
+    sheet = get_sheet()
+    try:
+        ws = sheet.worksheet(STATUS_SHEET)
+        ws.clear()
+        ws.append_row(["makul", "semester", "pertemuan", "aktif"])
+        ws.append_row(["Belum Diatur", "-", "-", "0"])
+    except Exception:
+        pass
+
+# ============================================================
+# FUNGSI SIMPAN PRESENSI
+# ============================================================
 def get_or_create_worksheet(sheet, title):
-    """Ambil worksheet berdasarkan judul, buat baru jika belum ada."""
     try:
         ws = sheet.worksheet(title)
     except gspread.exceptions.WorksheetNotFound:
         ws = sheet.add_worksheet(title=title, rows="1000", cols="10")
         ws.append_row(["Tanggal", "Jam Isi", "Mata Kuliah",
-                        "Semester", "Pertemuan Ke", "NIM", "Nama", "Rangkuman Materi"])
+                       "Semester", "Pertemuan Ke", "NIM", "Nama", "Rangkuman Materi"])
     return ws
 
 def simpan_ke_sheets(data: dict):
-    sheet = get_sheet()
-    # Nama worksheet = nama mata kuliah (bersih dari karakter khusus)
+    sheet   = get_sheet()
     nama_ws = data["Mata Kuliah"].replace("/", "-").replace(":", "-")[:50]
-    ws = get_or_create_worksheet(sheet, nama_ws)
-    # Cek apakah header sudah ada
+    ws      = get_or_create_worksheet(sheet, nama_ws)
     existing = ws.get_all_values()
     if not existing:
         ws.append_row(["Tanggal", "Jam Isi", "Mata Kuliah",
-                        "Semester", "Pertemuan Ke", "NIM", "Nama", "Rangkuman Materi"])
+                       "Semester", "Pertemuan Ke", "NIM", "Nama", "Rangkuman Materi"])
     ws.append_row([
-        data["Tanggal"],
-        data["Jam Isi"],
-        data["Mata Kuliah"],
-        data["Semester"],
-        data["Pertemuan Ke"],
-        data["NIM"],
-        data["Nama"],
-        data["Rangkuman Materi"]
+        data["Tanggal"], data["Jam Isi"], data["Mata Kuliah"],
+        data["Semester"], data["Pertemuan Ke"], data["NIM"],
+        data["Nama"], data["Rangkuman Materi"]
     ])
 
 # ============================================================
-# FUNGSI GENERATE QR CODE
+# FUNGSI QR CODE
 # ============================================================
 def generate_qr(url):
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
@@ -160,11 +205,13 @@ def generate_qr(url):
     return buf.getvalue()
 
 # ============================================================
-# AMBIL NILAI SESSION STATE DENGAN AMAN
+# BACA STATUS KELAS DARI SHEETS (sumber kebenaran tunggal)
 # ============================================================
-makul_aktif     = st.session_state.get('makul', 'Belum Diatur')
-semester_aktif  = st.session_state.get('semester', '-')
-pertemuan_aktif = st.session_state.get('pertemuan', '-')
+status = baca_status_kelas()
+makul_aktif     = status["makul"]
+semester_aktif  = status["semester"]
+pertemuan_aktif = status["pertemuan"]
+kelas_aktif     = status["aktif"]
 
 # ============================================================
 # HEADER
@@ -176,7 +223,7 @@ st.markdown("""
     </div>
 """, unsafe_allow_html=True)
 
-if makul_aktif != "Belum Diatur":
+if kelas_aktif and makul_aktif != "Belum Diatur":
     st.info(f"📍 **Kelas Aktif:** {makul_aktif} | **Semester:** {semester_aktif} | **Pertemuan Ke:** {pertemuan_aktif}")
 else:
     st.warning("⚠️ **Status:** Presensi belum dibuka oleh Dosen.")
@@ -192,7 +239,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ============================================================
-# FORM INPUT MAHASISWA
+# FORM MAHASISWA
 # ============================================================
 with st.form(key="form_presensi", clear_on_submit=True):
     nama   = st.text_input("Nama Lengkap Mahasiswa", placeholder="Masukkan nama sesuai SIAKAD")
@@ -205,7 +252,7 @@ with st.form(key="form_presensi", clear_on_submit=True):
     submit_button = st.form_submit_button(label="KIRIM KEHADIRAN AKTIF")
 
 if submit_button:
-    if makul_aktif == "Belum Diatur":
+    if not kelas_aktif or makul_aktif == "Belum Diatur":
         st.error("Presensi gagal! Dosen belum mengaktifkan kelas hari ini.")
     elif nama and nim and materi:
         tanggal_hari_ini = waktu_sekarang.strftime("%Y-%m-%d")
@@ -229,93 +276,121 @@ if submit_button:
         st.error("Gagal mengirim! Semua kolom wajib diisi.")
 
 # ============================================================
-# PANEL KONTROL DOSEN
+# PANEL DOSEN — DILINDUNGI PASSWORD
 # ============================================================
 st.markdown("<br><br>", unsafe_allow_html=True)
-with st.expander("⚙️ PANEL KONTROL DOSEN (Pengaturan Kelas & QR Code)"):
+with st.expander("🔐 LOGIN PANEL DOSEN"):
 
-    st.markdown("<h4 style='color:#4F46E5;'>1. Atur Informasi Kuliah Hari Ini</h4>", unsafe_allow_html=True)
+    if not st.session_state.get('dosen_login', False):
+        with st.form(key="form_login_dosen"):
+            password_input = st.text_input("Password", type="password", placeholder="Masukkan password dosen...")
+            tombol_login   = st.form_submit_button("Login")
 
-    default_makul     = st.session_state.get('makul', '')
-    default_semester  = st.session_state.get('semester', '')
-    default_pertemuan = st.session_state.get('pertemuan', '')
+        if tombol_login:
+            PASSWORD_DOSEN = st.secrets.get("password_dosen", "dosen123")
+            if password_input == PASSWORD_DOSEN:
+                st.session_state['dosen_login'] = True
+                st.success("Login berhasil!")
+                st.rerun()
+            else:
+                st.error("Password salah!")
+    else:
+        col_title, col_logout = st.columns([4, 1])
+        with col_title:
+            st.markdown("#### ✅ Panel Dosen Aktif")
+        with col_logout:
+            if st.button("Logout"):
+                st.session_state['dosen_login'] = False
+                st.rerun()
 
-    input_makul = st.text_input(
-        "Nama Mata Kuliah",
-        value=default_makul if default_makul != "Belum Diatur" else "",
-        placeholder="Contoh: Pemrograman Python"
-    )
-    col1, col2 = st.columns(2)
-    with col1:
-        input_semester = st.text_input(
-            "Semester",
-            value=default_semester if default_semester != "-" else "",
-            placeholder="Contoh: 4"
+        # --- 1. ATUR KELAS ---
+        st.markdown("<h4 style='color:#4F46E5;'>1. Atur & Aktifkan Kelas</h4>", unsafe_allow_html=True)
+
+        input_makul = st.text_input(
+            "Nama Mata Kuliah",
+            value=makul_aktif if makul_aktif != "Belum Diatur" else "",
+            placeholder="Contoh: Pemrograman Python"
         )
-    with col2:
-        input_pertemuan = st.text_input(
-            "Pertemuan Ke-",
-            value=default_pertemuan if default_pertemuan != "-" else "",
-            placeholder="Contoh: 3"
-        )
-
-    if st.button("Simpan & Aktifkan Kelas"):
-        if input_makul and input_semester and input_pertemuan:
-            st.session_state['makul']     = input_makul
-            st.session_state['semester']  = input_semester
-            st.session_state['pertemuan'] = input_pertemuan
-            st.success("Kelas berhasil diaktifkan!")
-            st.rerun()
-        else:
-            st.error("Mohon isi semua data kelas sebelum menyimpan!")
-
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown("<h4 style='color:#4F46E5;'>2. Generate QR Code Absensi</h4>", unsafe_allow_html=True)
-    st.write("Masukkan URL aplikasi yang sudah di-deploy (dari Streamlit Cloud):")
-
-    url_aplikasi = st.text_input("URL Aplikasi", placeholder="https://nama-app.streamlit.app")
-
-    if st.button("Generate QR Code"):
-        if url_aplikasi:
-            qr_image = generate_qr(url_aplikasi)
-            st.image(qr_image,
-                     caption=f"QR Presensi — {makul_aktif} Pertemuan {pertemuan_aktif}",
-                     width=260)
-            st.download_button(
-                label="⬇️ Download QR Code",
-                data=qr_image,
-                file_name=f"qr_{makul_aktif}_pertemuan{pertemuan_aktif}.png",
-                mime="image/png"
+        col1, col2 = st.columns(2)
+        with col1:
+            input_semester = st.text_input(
+                "Semester",
+                value=semester_aktif if semester_aktif != "-" else "",
+                placeholder="Contoh: 4"
             )
-        else:
-            st.error("Masukkan URL aplikasi terlebih dahulu!")
+        with col2:
+            input_pertemuan = st.text_input(
+                "Pertemuan Ke-",
+                value=pertemuan_aktif if pertemuan_aktif != "-" else "",
+                placeholder="Contoh: 3"
+            )
 
-    st.markdown("<hr>", unsafe_allow_html=True)
-    st.markdown("<h4 style='color:#4F46E5;'>3. Lihat & Download Data Presensi</h4>", unsafe_allow_html=True)
+        col_buka, col_tutup = st.columns(2)
+        with col_buka:
+            if st.button("✅ Simpan & Aktifkan Kelas", use_container_width=True):
+                if input_makul and input_semester and input_pertemuan:
+                    try:
+                        tulis_status_kelas(input_makul, input_semester, input_pertemuan, aktif=True)
+                        st.success("Kelas berhasil diaktifkan! Semua device sekarang bisa presensi.")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Gagal menyimpan: {e}")
+                else:
+                    st.error("Isi semua data kelas terlebih dahulu!")
+        with col_tutup:
+            if st.button("🔴 Tutup Presensi", use_container_width=True):
+                try:
+                    tutup_kelas()
+                    st.success("Presensi ditutup.")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Gagal menutup: {e}")
 
-    if st.button("Tampilkan Data dari Google Sheets"):
-        try:
-            sheet  = get_sheet()
-            nama_ws = makul_aktif.replace("/", "-").replace(":", "-")[:50]
-            ws     = sheet.worksheet(nama_ws)
-            data   = ws.get_all_records()
-            if data:
-                df = pd.DataFrame(data)
-                st.dataframe(df, use_container_width=True)
+        # --- 2. QR CODE ---
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#4F46E5;'>2. Generate QR Code Absensi</h4>", unsafe_allow_html=True)
+        url_aplikasi = st.text_input("URL Aplikasi", placeholder="https://nama-app.streamlit.app")
 
-                # Download sebagai Excel
-                output = BytesIO()
-                df.to_excel(output, index=False, engine='openpyxl')
-                output.seek(0)
+        if st.button("Generate QR Code"):
+            if url_aplikasi:
+                qr_image = generate_qr(url_aplikasi)
+                st.image(qr_image,
+                         caption=f"QR Presensi — {makul_aktif} Pertemuan {pertemuan_aktif}",
+                         width=260)
                 st.download_button(
-                    label="⬇️ Download Excel",
-                    data=output,
-                    file_name=f"presensi_{makul_aktif}_pertemuan{pertemuan_aktif}.xlsx",
-                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    label="⬇️ Download QR Code",
+                    data=qr_image,
+                    file_name=f"qr_{makul_aktif}_pertemuan{pertemuan_aktif}.png",
+                    mime="image/png"
                 )
             else:
+                st.error("Masukkan URL aplikasi terlebih dahulu!")
+
+        # --- 3. LIHAT DATA ---
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#4F46E5;'>3. Lihat & Download Data Presensi</h4>", unsafe_allow_html=True)
+
+        if st.button("Tampilkan Data dari Google Sheets"):
+            try:
+                sheet   = get_sheet()
+                nama_ws = makul_aktif.replace("/", "-").replace(":", "-")[:50]
+                ws      = sheet.worksheet(nama_ws)
+                data    = ws.get_all_records()
+                if data:
+                    df = pd.DataFrame(data)
+                    st.dataframe(df, use_container_width=True)
+                    output = BytesIO()
+                    df.to_excel(output, index=False, engine='openpyxl')
+                    output.seek(0)
+                    st.download_button(
+                        label="⬇️ Download Excel",
+                        data=output,
+                        file_name=f"presensi_{makul_aktif}_pertemuan{pertemuan_aktif}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+                else:
+                    st.info("Belum ada data presensi untuk mata kuliah ini.")
+            except gspread.exceptions.WorksheetNotFound:
                 st.info("Belum ada data presensi untuk mata kuliah ini.")
-        except gspread.exceptions.WorksheetNotFound:
-            st.info("Belum ada data presensi untuk mata kuliah ini.")
-        except Exception as e:
-            st.error(f"Error mengambil data: {e}")
+            except Exception as e:
+                st.error(f"Error: {e}")
