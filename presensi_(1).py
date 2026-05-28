@@ -350,7 +350,7 @@ waktu_sekarang = datetime.now()
 st.markdown("""
     <div class="header-banner">
         <h1>PRESENSI AKADEMIK BISNIS DIGITAL</h1>
-        <p>Ver Beta 0.50 — Multi Kelas</p>
+        <p>Ver Beta 0.71</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -374,7 +374,7 @@ if st.session_state['halaman'] == 'landing':
         st.warning("⚠️ Belum ada kelas yang dibuka oleh Dosen.")
 
     st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align:center; color:#4F46E5;'>Kamu siapa?</h3>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align:center; color:#4F46E5;'>Pilih Role </h3>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
 
     col_mhs, col_dos = st.columns(2)
@@ -383,7 +383,7 @@ if st.session_state['halaman'] == 'landing':
             <div style='background:white; border-radius:20px; padding:30px 20px;
                         text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.06);
                         border: 1.5px solid #E2E8F0;'>
-                <div style='font-size:48px;'></div>
+                <div style='font-size:48px;'> </div>
                 <div style='font-weight:700; font-size:18px; margin-top:10px; color:#1E293B;'>Mahasiswa</div>
                 <div style='font-size:13px; color:#64748B; margin-top:6px;'>Isi presensi kehadiran</div>
             </div>
