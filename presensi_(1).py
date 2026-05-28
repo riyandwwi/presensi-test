@@ -231,8 +231,7 @@ def get_or_create_worksheet(sheet, title):
         ws = sheet.worksheet(title)
     except gspread.exceptions.WorksheetNotFound:
         ws = sheet.add_worksheet(title=title, rows="1000", cols="10")
-        ws.append_row(["Tanggal", "Jam Isi", "Mata Kuliah",
-                       "Semester", "Pertemuan Ke", "NIM", "Nama", "Rangkuman Materi"])
+        ws.append_row(["Tanggal", "Jam Isi", "Semester", "Pertemuan Ke", "NIM", "Nama", "Rangkuman Materi"])
     return ws
 
 def simpan_ke_sheets(data: dict):
@@ -241,10 +240,9 @@ def simpan_ke_sheets(data: dict):
     ws      = get_or_create_worksheet(sheet, nama_ws)
     existing = ws.get_all_values()
     if not existing:
-        ws.append_row(["Tanggal", "Jam Isi", "Mata Kuliah",
-                       "Semester", "Pertemuan Ke", "NIM", "Nama", "Rangkuman Materi"])
+        ws.append_row(["Tanggal", "Jam Isi", "Semester", "Pertemuan Ke", "NIM", "Nama", "Rangkuman Materi"])
     ws.append_row([
-        data["Tanggal"], data["Jam Isi"], data["Mata Kuliah"],
+        data["Tanggal"], data["Jam Isi"],
         data["Semester"], data["Pertemuan Ke"], data["NIM"],
         data["Nama"], data["Rangkuman Materi"]
     ])
@@ -368,10 +366,12 @@ with st.form(key="form_presensi", clear_on_submit=True):
     nim  = st.text_input("NIM (Nomor Induk Mahasiswa)", placeholder="")
 
     if semua_kelas_aktif:
-        opsi_kelas = [
-            f"{k['makul']} | Sem {k['semester']} | Pertemuan {k['pertemuan']}"
-            for k in semua_kelas_aktif
-        ]
+        def label_kelas(k):
+            nama_makul = k['makul'].rsplit(' (', 1)[0]
+            nama_dosen_full = k['makul'].rsplit(' (', 1)[-1].rstrip(')')
+            nama_dosen_singkat = nama_dosen_full.split(',')[0]
+            return f"{nama_makul} — {nama_dosen_singkat} | Pertemuan {k['pertemuan']}"
+        opsi_kelas = [label_kelas(k) for k in semua_kelas_aktif]
         pilihan_kelas_label = st.selectbox(
             "🏫 Pilih Kelas yang Sedang Kamu Ikuti",
             options=opsi_kelas,
@@ -549,32 +549,35 @@ with st.expander("PANEL DOSEN"):
         st.markdown("<hr>", unsafe_allow_html=True)
         st.markdown("<h4 style='color:#4F46E5;'>3. Lihat & Download Data Presensi</h4>", unsafe_allow_html=True)
 
-        semua_makul_dosen = [
-            f"{mk} ({pilihan_dosen})" for mk in DATA_JADWAL[pilihan_dosen]
-        ]
-        makul_lihat = st.selectbox("Pilih Mata Kuliah untuk Ditampilkan", semua_makul_dosen)
+        if not status_dosen["aktif"]:
+            st.warning("⚠️ Tidak ada kelas aktif saat ini. Aktifkan kelas terlebih dahulu untuk melihat data.")
+        else:
+            makul_lihat = status_dosen["makul"]
+            st.caption(f"📚 Menampilkan data untuk: **{makul_lihat}** | Pertemuan {status_dosen['pertemuan']}")
 
-        if st.button("Tampilkan Data dari Google Sheets"):
-            try:
-                sheet   = get_sheet()
-                nama_ws = makul_lihat.replace("/", "-").replace(":", "-")[:50]
-                ws      = sheet.worksheet(nama_ws)
-                data    = ws.get_all_records()
-                if data:
-                    df = pd.DataFrame(data)
-                    st.dataframe(df, use_container_width=True)
-                    output = BytesIO()
-                    df.to_excel(output, index=False, engine='openpyxl')
-                    output.seek(0)
-                    st.download_button(
-                        label="Download Excel",
-                        data=output,
-                        file_name=f"presensi_{makul_lihat}.xlsx",
-                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                    )
-                else:
+            if st.button("Tampilkan Data dari Google Sheets"):
+                try:
+                    sheet   = get_sheet()
+                    nama_ws = makul_lihat.replace("/", "-").replace(":", "-")[:50]
+                    ws      = sheet.worksheet(nama_ws)
+                    data    = ws.get_all_records()
+                    if data:
+                        df = pd.DataFrame(data)
+                        if "Mata Kuliah" in df.columns:
+                            df = df.drop(columns=["Mata Kuliah"])
+                        st.dataframe(df, use_container_width=True)
+                        output = BytesIO()
+                        df.to_excel(output, index=False, engine='openpyxl')
+                        output.seek(0)
+                        st.download_button(
+                            label="Download Excel",
+                            data=output,
+                            file_name=f"presensi_{makul_lihat}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                    else:
+                        st.info("Belum ada data presensi untuk mata kuliah ini.")
+                except gspread.exceptions.WorksheetNotFound:
                     st.info("Belum ada data presensi untuk mata kuliah ini.")
-            except gspread.exceptions.WorksheetNotFound:
-                st.info("Belum ada data presensi untuk mata kuliah ini.")
-            except Exception as e:
-                st.error(f"Error: {e}")
+                except Exception as e:
+                    st.error(f"Error: {e}")
