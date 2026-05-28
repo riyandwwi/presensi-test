@@ -345,7 +345,7 @@ DATA_JADWAL = {
 def ke_halaman(nama):
     st.session_state['halaman'] = nama
     st.rerun()
-
+tz_wib = pytz.timezone('Asia/Jakarta')
 waktu_sekarang = datetime.now()
 
 # ============================================================
@@ -465,23 +465,44 @@ elif st.session_state['halaman'] == 'mahasiswa':
                 kelas_dipilih = semua_kelas_aktif[idx_pilihan]
                 tanggal_hari_ini = waktu_sekarang.strftime("%Y-%m-%d")
                 jam_menit_detik  = waktu_sekarang.strftime("%H:%M:%S")
+                
+                # --- MULAI BLOK VALIDASI DATABASE ---
                 try:
-                    simpan_ke_sheets({
-                        "Tanggal":          tanggal_hari_ini,
-                        "Jam Isi":          jam_menit_detik,
-                        "Mata Kuliah":      kelas_dipilih["makul"],
-                        "Semester":         kelas_dipilih["semester"],
-                        "Pertemuan Ke":     kelas_dipilih["pertemuan"],
-                        "NIM":              nim.strip(),
-                        "Nama":             nama.strip(),
-                        "Rangkuman Materi": materi.strip()
-                    })
-                    st.balloons()
-                    # MENGUNCI FORM SETELAH BERHASIL
-                    st.session_state['sudah_presensi'] = True 
-                    st.rerun() # Refresh halaman untuk memunculkan pesan sukses
+                    sheet = get_sheet()
+                    nama_ws = kelas_dipilih["makul"].replace("/", "-").replace(":", "-")[:50]
+                    ws = get_or_create_worksheet(sheet, nama_ws)
+                    
+                    # Ambil semua data absen yang sudah masuk
+                    data_absen_eksisting = ws.get_all_records()
+                    
+                    # Cek apakah NIM ini sudah absen di pertemuan ini
+                    sudah_absen = False
+                    for baris in data_absen_eksisting:
+                        if str(baris.get('NIM', '')).strip() == nim.strip() and str(baris.get('Pertemuan Ke', '')) == str(kelas_dipilih["pertemuan"]):
+                            sudah_absen = True
+                            break
+                    
+                    if sudah_absen:
+                        st.error(f"⚠️ Ditolak: NIM {nim} sudah terdaftar hadir pada pertemuan {kelas_dipilih['pertemuan']}!")
+                    else:
+                        # Jika belum absen, simpan datanya
+                        simpan_ke_sheets({
+                            "Tanggal":          tanggal_hari_ini,
+                            "Jam Isi":          jam_menit_detik,
+                            "Mata Kuliah":      kelas_dipilih["makul"],
+                            "Semester":         kelas_dipilih["semester"],
+                            "Pertemuan Ke":     kelas_dipilih["pertemuan"],
+                            "NIM":              nim.strip(),
+                            "Nama":             nama.strip(),
+                            "Rangkuman Materi": materi.strip()
+                        })
+                        st.balloons()
+                        st.session_state['sudah_presensi'] = True 
+                        st.rerun()
+                        
                 except Exception as e:
-                    st.error(f"Gagal menyimpan ke Google Sheets: {e}")
+                    st.error(f"Gagal memproses data: {e}")
+                # --- AKHIR BLOK VALIDASI DATABASE ---
             else:
                 st.error("Gagal mengirim! Semua kolom wajib diisi.")
 
