@@ -5,7 +5,7 @@ import qrcode
 from io import BytesIO
 import gspread
 from google.oauth2.service_account import Credentials
-import pytz # Tambahan library untuk timezone
+import pytz 
 
 # ============================================================
 # SET ZONA WAKTU (WIB) & INITIALISASI SESSION STATE
@@ -350,7 +350,7 @@ def ke_halaman(nama):
 st.markdown("""
     <div class="header-banner">
         <h1>PRESENSI AKADEMIK BISNIS DIGITAL</h1>
-        <p>Ver Beta 0.80</p>
+        <p>Ver Beta 0.90</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -383,7 +383,7 @@ if st.session_state['halaman'] == 'landing':
             <div style='background:white; border-radius:20px; padding:30px 20px;
                         text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.06);
                         border: 1.5px solid #E2E8F0;'>
-                <div style='font-size:48px;'></div>
+                <div style='font-size:48px;'>🧑‍🎓</div>
                 <div style='font-weight:700; font-size:18px; margin-top:10px; color:#1E293B;'>Mahasiswa</div>
                 <div style='font-size:13px; color:#64748B; margin-top:6px;'>Isi presensi kehadiran</div>
             </div>
@@ -396,7 +396,7 @@ if st.session_state['halaman'] == 'landing':
             <div style='background:white; border-radius:20px; padding:30px 20px;
                         text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.06);
                         border: 1.5px solid #E2E8F0;'>
-                <div style='font-size:48px;'></div>
+                <div style='font-size:48px;'>👨‍🏫</div>
                 <div style='font-weight:700; font-size:18px; margin-top:10px; color:#1E293B;'>Dosen</div>
                 <div style='font-size:13px; color:#64748B; margin-top:6px;'>Kelola kelas & presensi</div>
             </div>
@@ -413,7 +413,6 @@ elif st.session_state['halaman'] == 'mahasiswa':
     if st.button("← Kembali", key="back_mhs"):
         ke_halaman('landing')
 
-    # CEK APAKAH SUDAH ABSEN DI SESI INI
     if st.session_state['sudah_presensi']:
         st.success("✅ Anda sudah berhasil melakukan presensi pada sesi ini. Terima kasih!")
         st.info("💡 Untuk memberikan kesempatan presensi kepada mahasiswa lain menggunakan perangkat mereka sendiri, form telah dikunci untuk sesi ini.")
@@ -462,7 +461,6 @@ elif st.session_state['halaman'] == 'mahasiswa':
                 tanggal_hari_ini = waktu_sekarang.strftime("%Y-%m-%d")
                 jam_menit_detik  = waktu_sekarang.strftime("%H:%M:%S")
                 
-                # --- VALIDASI DATABASE: CEK NIM DOUBLE DI PERTEMUAN INI ---
                 try:
                     sheet = get_sheet()
                     nama_ws = kelas_dipilih["makul"].replace("/", "-").replace(":", "-")[:50]
@@ -479,7 +477,6 @@ elif st.session_state['halaman'] == 'mahasiswa':
                     if sudah_absen:
                         st.error(f"❌ Ditolak: NIM {nim} sudah mengisi presensi pada Pertemuan Ke-{kelas_dipilih['pertemuan']}!")
                     else:
-                        # Jika lolos validasi database, simpan data ke sheet
                         simpan_ke_sheets({
                             "Tanggal":          tanggal_hari_ini,
                             "Jam Isi":          jam_menit_detik,
@@ -639,63 +636,84 @@ elif st.session_state['halaman'] == 'dosen':
             else:
                 st.error("Masukkan URL aplikasi terlebih dahulu!")
 
-        # --- 4. LIHAT DATA ---
+        # --- 4. ARSIP & REKAPITULASI (FITUR TERBARU) ---
         st.markdown("<hr>", unsafe_allow_html=True)
-        st.markdown("<h4 style='color:#4F46E5;'>3. Lihat & Download Data Presensi</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#4F46E5;'>3. Lihat Rekapitulasi & Arsip Presensi</h4>", unsafe_allow_html=True)
 
-        kelas_aktif_sekarang = baca_semua_kelas_aktif()
+        # Dropdown 1: Pilih dari SEMUA Mata Kuliah yang diampu dosen ini (Berdasarkan DATA_JADWAL)
+        makul_arsip_opsi = DATA_JADWAL[pilihan_dosen]
+        pilih_makul_arsip = st.selectbox("Pilih Mata Kuliah untuk Lihat Arsip:", options=makul_arsip_opsi)
         
-        if not kelas_aktif_sekarang:
-            st.warning("⚠️ Belum ada kelas yang aktif saat ini. Aktifkan kelas terlebih dahulu.")
-        else:
-            opsi_makul_aktif = [k['makul'] for k in kelas_aktif_sekarang]
-            pilih_makul_lihat = st.selectbox("Pilih Kelas Aktif yang Ingin Dilihat:", options=opsi_makul_aktif)
-            
-            col_tampil, col_reload = st.columns([3, 1])
-            with col_tampil:
-                btn_tampil = st.button("Tampilkan Data Terkini", use_container_width=True)
-            with col_reload:
-                btn_reload = st.button("🔄 Reload Data", use_container_width=True)
+        # Format string gabungan untuk mencari nama Sheet di Google Sheets
+        input_makul_arsip_gabungan = f"{pilih_makul_arsip} ({pilihan_dosen})"
 
-            if btn_tampil or btn_reload:
-                try:
-                    sheet   = get_sheet()
-                    nama_ws = pilih_makul_lihat.replace("/", "-").replace(":", "-")[:50]
-                    ws      = sheet.worksheet(nama_ws)
-                    data    = ws.get_all_records()
+        # Dropdown 2: Memilih Pertemuan Berapa (1-16)
+        pilih_pertemuan_arsip = st.selectbox(
+            "Pilih Nomor Pertemuan Perkuliahan:",
+            options=[str(i) for i in range(1, 17)],
+            index=0
+        )
+        
+        col_tampil, col_reload = st.columns([3, 1])
+        with col_tampil:
+            btn_tampil = st.button("Tampilkan Arsip Pertemuan", use_container_width=True)
+        with col_reload:
+            btn_reload = st.button("🔄 Reload Data", use_container_width=True)
+
+        if btn_tampil or btn_reload:
+            try:
+                sheet   = get_sheet()
+                nama_ws = input_makul_arsip_gabungan.replace("/", "-").replace(":", "-")[:50]
+                ws      = sheet.worksheet(nama_ws)
+                data    = ws.get_all_records()
+                
+                if data:
+                    df_all = pd.DataFrame(data)
                     
-                    if data:
-                        df = pd.DataFrame(data)
-                        if "Mata Kuliah" in df.columns:
-                            df = df.drop(columns=["Mata Kuliah"])
+                    # FILTER: Ambil data hanya untuk pertemuan yang dipilih
+                    # Pastikan konversi tipe data sama (string ke string)
+                    df_filtered = df_all[df_all['Pertemuan Ke'].astype(str) == str(pilih_pertemuan_arsip)]
+                    
+                    if not df_filtered.empty:
+                        # Buang kolom mata kuliah jika ada supaya rapi
+                        if "Mata Kuliah" in df_filtered.columns:
+                            df_filtered = df_filtered.drop(columns=["Mata Kuliah"])
                         
-                        st.dataframe(df, use_container_width=True)
+                        st.success(f"📋 Ditemukan {len(df_filtered)} data mahasiswa pada Pertemuan {pilih_pertemuan_arsip}")
                         
+                        # 1. Menampilkan Tabel Filtered
+                        st.dataframe(df_filtered, use_container_width=True)
+                        
+                        # 2. Menyiapkan Data Excel untuk Download (Hanya data pertemuan terpilih)
                         output = BytesIO()
-                        df.to_excel(output, index=False, engine='openpyxl')
+                        df_filtered.to_excel(output, index=False, engine='openpyxl')
                         output.seek(0)
                         
                         col_dw, col_space = st.columns([1, 2])
                         with col_dw:
                             st.download_button(
-                                label="⬇️ Download Excel",
+                                label="⬇️ Download Excel Pertemuan Ini",
                                 data=output,
-                                file_name=f"presensi_{pilih_makul_lihat}.xlsx",
+                                file_name=f"presensi_{pilih_makul_arsip}_Pertemuan_{pilih_pertemuan_arsip}.xlsx",
                                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                             )
                         
+                        # 3. Menampilkan List Mahasiswa yang Masuk di Bawah
                         st.markdown("---")
-                        st.markdown(f"##### 👥 Daftar Kehadiran ({len(df)} Mahasiswa)")
+                        st.markdown(f"##### 👥 Daftar Kehadiran Sesi Ke-{pilih_pertemuan_arsip}")
                         st.markdown("<div style='background-color: white; padding: 20px; border-radius: 12px; border: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
                         
-                        for index, row in df.iterrows():
-                            st.markdown(f"**{index + 1}. {row['Nama']}** ({row['NIM']}) <br><small style='color: #64748B;'>🕒 Masuk pukul: {row['Jam Isi']} WIB</small>", unsafe_allow_html=True)
+                        # Reset index loop agar nomor dimulai dari 1 kembali
+                        df_filtered = df_filtered.reset_index(drop=True)
+                        for index, row in df_filtered.iterrows():
+                            st.markdown(f"**{index + 1}. {row['Nama']}** ({row['NIM']}) <br><small style='color: #64748B;'>🕒 Masuk pukul: {row['Jam Isi']} WIB | Tgl: {row['Tanggal']}</small>", unsafe_allow_html=True)
                             
                         st.markdown("</div>", unsafe_allow_html=True)
-
                     else:
-                        st.info(f"Belum ada mahasiswa yang mengisi presensi untuk kelas {pilih_makul_lihat}.")
-                except gspread.exceptions.WorksheetNotFound:
-                    st.info(f"Worksheet belum terbuat karena belum ada presensi masuk untuk kelas {pilih_makul_lihat}.")
-                except Exception as e:
-                    st.error(f"Error: {e}")
+                        st.warning(f"Tidak ada data presensi mahasiswa untuk **Pertemuan Ke-{pilih_pertemuan_arsip}**.")
+                else:
+                    st.info(f"Belum ada mahasiswa yang mengisi presensi sama sekali untuk kelas ini.")
+            except gspread.exceptions.WorksheetNotFound:
+                st.info(f"Belum ada riwayat presensi yang terekam di database untuk kelas {pilih_makul_arsip}.")
+            except Exception as e:
+                st.error(f"Error: {e}")
