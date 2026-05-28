@@ -112,7 +112,6 @@ def get_sheet():
 
 # ============================================================
 # FUNGSI BACA / TULIS STATUS KELAS KE GOOGLE SHEETS
-# Sheet khusus bernama "STATUS_KELAS" menyimpan info kelas aktif
 # ============================================================
 STATUS_SHEET = "STATUS_KELAS"
 
@@ -137,8 +136,9 @@ def baca_status_kelas():
                 "pertemuan": row.get("pertemuan", "-"),
                 "aktif":     str(row.get("aktif", "0")) == "1"
             }
-    except Exception:
-        pass
+    except Exception as e:
+        # Memunculkan silent error ke layar agar mudah ditelusuri jika API belum aktif/kredensial salah
+        st.error(f"⚠️ Gagal terhubung ke Google Sheets: {e}")
     return {"makul": "Belum Diatur", "semester": "-", "pertemuan": "-", "aktif": False}
 
 def tulis_status_kelas(makul, semester, pertemuan, aktif=True):
@@ -218,8 +218,8 @@ kelas_aktif     = status["aktif"]
 # ============================================================
 st.markdown("""
     <div class="header-banner">
-        <h1>PRESENSI AKADEMIK</h1>
-        <p>Sistem Kehadiran & Feedback Pembelajaran Real-Time</p>
+        <h1>PRESENSI AKADEMIK BISNIS DIGITAL</h1>
+        <p></p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -279,7 +279,7 @@ if submit_button:
 # PANEL DOSEN — DILINDUNGI PASSWORD
 # ============================================================
 st.markdown("<br><br>", unsafe_allow_html=True)
-with st.expander("🔐 LOGIN PANEL DOSEN"):
+with st.expander("🔑 PANEL DOSEN"):
 
     if not st.session_state.get('dosen_login', False):
         with st.form(key="form_login_dosen"):
@@ -303,14 +303,86 @@ with st.expander("🔐 LOGIN PANEL DOSEN"):
                 st.session_state['dosen_login'] = False
                 st.rerun()
 
-        # --- 1. ATUR KELAS ---
+        # --- 1. ATUR KELAS (DROPDOWN DINAMIS BERDASARKAN JADWAL) ---
         st.markdown("<h4 style='color:#4F46E5;'>1. Atur & Aktifkan Kelas</h4>", unsafe_allow_html=True)
 
-        input_makul = st.text_input(
-            "Nama Mata Kuliah",
-            value=makul_aktif if makul_aktif != "Belum Diatur" else "",
-            placeholder="Contoh: Pemrograman Python"
+        DATA_JADWAL = {
+            "Riyan Dwi Yulian P, S.Kom., M.Kom.": [
+                "Analisis Perancangan Berbasis Objek A",
+                "Analisis Perancangan Berbasis Objek B",
+                "Mata Kuliah Pilihan Digital (Data Analyze) A",
+                "Pemrograman Mobile",
+                "Data Mining A",
+                "Data Mining B",
+                "Mata Kuliah Pilihan Digital (Data Analyze) B"
+            ],
+            "Esti Nur Wakhidah, S.Pd., M.M.": [
+                "Manajemen Pemasaran Bisnis A",
+                "Metodologi Penelitian B",
+                "Komunikasi Bisnis",
+                "Metodologi Penelitian A",
+                "Manajemen Pemasaran Bisnis B"
+            ],
+            "Didik Adi Sabara, S.M., M.E.": [
+                "Mentoring Bisnis Digital A",
+                "Mentoring Bisnis Digital B",
+                "E-Commerce",
+                "Kewirausahaan Digital A",
+                "Kewirausahaan Digital B"
+            ],
+            "Nour Mohammed Moussa Al Fattah M.Pd.": [
+                "AIK 2 A",
+                "AIK 4",
+                "AIK 2 B"
+            ],
+            "Ridhwan Sinatria, S.E., M.M.": [
+                "Manajemen Sumber Daya Manusia B",
+                "Mata Kuliah Pilihan Bisnis (Ekonomi Digital) A",
+                "Manajemen Sumber Daya Manusia A",
+                "Mata Kuliah Pilihan Bisnis (Ekonomi Digital) B",
+                "Manajemen Risiko",
+                "Kerja Praktek A (Team Teaching)",
+                "Kerja Praktek B (Team Teaching)"
+            ],
+            "Kartika Dewi Permatasari, S.Ak., M.Ak., Ak.": [
+                "Dasar-dasar Akuntansi A",
+                "Dasar-dasar Akuntansi B",
+                "Perpajakan",
+                "Kerja Praktek A (Team Teaching)",
+                "Kerja Praktek B (Team Teaching)"
+            ],
+            "Sriyati., S.Kom., M.Kom.": [
+                "Pemrograman Web A",
+                "Basis Data",
+                "Pemrograman Web B",
+                "Sistem Pendukung Keputusan"
+            ],
+            "Doni Uji Windiatmoko, S.Pd., M.Pd.": [
+                "Kewarganegaraan B",
+                "Kewarganegaraan A"
+            ],
+            "Purwati, S.S., M.Hum.": [
+                "Bahasa Inggris 2 A",
+                "Bahasa Inggris 2 B"
+            ]
+        }
+
+        pilihan_dosen = st.selectbox(
+            "Nama Dosen Pengampu",
+            options=list(DATA_JADWAL.keys()),
+            placeholder="Pilih Nama Dosen..."
         )
+
+        daftar_makul = DATA_JADWAL[pilihan_dosen]
+        pilihan_makul = st.selectbox(
+            "Nama Mata Kuliah",
+            options=daftar_makul,
+            placeholder="Pilih Mata Kuliah..."
+        )
+
+        # Format teks gabungan yang dikirim ke Google Sheets
+        input_makul_gabungan = f"{pilihan_makul} ({pilihan_dosen})"
+
         col1, col2 = st.columns(2)
         with col1:
             input_semester = st.text_input(
@@ -328,9 +400,9 @@ with st.expander("🔐 LOGIN PANEL DOSEN"):
         col_buka, col_tutup = st.columns(2)
         with col_buka:
             if st.button("✅ Simpan & Aktifkan Kelas", use_container_width=True):
-                if input_makul and input_semester and input_pertemuan:
+                if input_makul_gabungan and input_semester and input_pertemuan:
                     try:
-                        tulis_status_kelas(input_makul, input_semester, input_pertemuan, aktif=True)
+                        tulis_status_kelas(input_makul_gabungan, input_semester, input_pertemuan, aktif=True)
                         st.success("Kelas berhasil diaktifkan! Semua device sekarang bisa presensi.")
                         st.rerun()
                     except Exception as e:
@@ -394,3 +466,4 @@ with st.expander("🔐 LOGIN PANEL DOSEN"):
                 st.info("Belum ada data presensi untuk mata kuliah ini.")
             except Exception as e:
                 st.error(f"Error: {e}")
+}
