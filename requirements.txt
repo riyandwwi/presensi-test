@@ -1,6 +1,7 @@
 streamlit
+pandas
+qrcode
+openpyxl
 gspread
 google-auth
-pandas
-qrcode[pil]
-openpyxl
+pytz
