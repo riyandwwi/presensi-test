@@ -122,7 +122,6 @@ def baca_status_kelas():
         try:
             ws = sheet.worksheet(STATUS_SHEET)
         except gspread.exceptions.WorksheetNotFound:
-            # Buat worksheet baru kalau belum ada
             ws = sheet.add_worksheet(title=STATUS_SHEET, rows="5", cols="5")
             ws.append_row(["makul", "semester", "pertemuan", "aktif"])
             ws.append_row(["Belum Diatur", "-", "-", "0"])
@@ -137,7 +136,6 @@ def baca_status_kelas():
                 "aktif":     str(row.get("aktif", "0")) == "1"
             }
     except Exception as e:
-        # Memunculkan silent error ke layar agar mudah ditelusuri jika API belum aktif/kredensial salah
         st.error(f"⚠️ Gagal terhubung ke Google Sheets: {e}")
     return {"makul": "Belum Diatur", "semester": "-", "pertemuan": "-", "aktif": False}
 
@@ -150,7 +148,6 @@ def tulis_status_kelas(makul, semester, pertemuan, aktif=True):
         ws = sheet.add_worksheet(title=STATUS_SHEET, rows="5", cols="5")
         ws.append_row(["makul", "semester", "pertemuan", "aktif"])
 
-    # Hapus data lama, tulis ulang
     ws.clear()
     ws.append_row(["makul", "semester", "pertemuan", "aktif"])
     ws.append_row([makul, semester, pertemuan, "1" if aktif else "0"])
@@ -205,7 +202,7 @@ def generate_qr(url):
     return buf.getvalue()
 
 # ============================================================
-# BACA STATUS KELAS DARI SHEETS (sumber kebenaran tunggal)
+# BACA STATUS KELAS DARI SHEETS
 # ============================================================
 status = baca_status_kelas()
 makul_aktif     = status["makul"]
@@ -214,7 +211,7 @@ pertemuan_aktif = status["pertemuan"]
 kelas_aktif     = status["aktif"]
 
 # ============================================================
-# HEADER
+# HEADER VIA MARKDOWN
 # ============================================================
 st.markdown("""
     <div class="header-banner">
@@ -303,7 +300,7 @@ with st.expander("🔑 PANEL DOSEN"):
                 st.session_state['dosen_login'] = False
                 st.rerun()
 
-        # --- 1. ATUR KELAS (DROPDOWN DINAMIS BERDASARKAN JADWAL) ---
+        # --- 1. ATUR KELAS (DROPDOWN DINAMIS) ---
         st.markdown("<h4 style='color:#4F46E5;'>1. Atur & Aktifkan Kelas</h4>", unsafe_allow_html=True)
 
         DATA_JADWAL = {
@@ -380,7 +377,6 @@ with st.expander("🔑 PANEL DOSEN"):
             placeholder="Pilih Mata Kuliah..."
         )
 
-        # Format teks gabungan yang dikirim ke Google Sheets
         input_makul_gabungan = f"{pilihan_makul} ({pilihan_dosen})"
 
         col1, col2 = st.columns(2)
@@ -466,4 +462,3 @@ with st.expander("🔑 PANEL DOSEN"):
                 st.info("Belum ada data presensi untuk mata kuliah ini.")
             except Exception as e:
                 st.error(f"Error: {e}")
-}
