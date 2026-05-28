@@ -216,7 +216,7 @@ kelas_aktif     = status["aktif"]
 st.markdown("""
     <div class="header-banner">
         <h1>PRESENSI AKADEMIK BISNIS DIGITAL</h1>
-        <p></p>
+        <p>Ver Beta 0.37</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -239,11 +239,11 @@ st.markdown(f"""
 # FORM MAHASISWA
 # ============================================================
 with st.form(key="form_presensi", clear_on_submit=True):
-    nama   = st.text_input("Nama Lengkap Mahasiswa", placeholder="Masukkan nama sesuai SIAKAD")
-    nim    = st.text_input("NIM (Nomor Induk Mahasiswa)", placeholder="Contoh: 220101001")
+    nama   = st.text_input("Nama Lengkap Mahasiswa", placeholder=" ")
+    nim    = st.text_input("NIM (Nomor Induk Mahasiswa)", placeholder="")
     materi = st.text_area(
-        "Rangkuman Materi Kuliah Hari Ini",
-        placeholder="Tuliskan poin penting yang kamu pelajari...",
+        "Materi Kuliah Hari Ini",
+        placeholder="Masukan topik materi yang di bahas ",
         height=120
     )
     submit_button = st.form_submit_button(label="KIRIM KEHADIRAN AKTIF")
@@ -276,7 +276,7 @@ if submit_button:
 # PANEL DOSEN — DILINDUNGI PASSWORD
 # ============================================================
 st.markdown("<br><br>", unsafe_allow_html=True)
-with st.expander("🔑 PANEL DOSEN"):
+with st.expander("PANEL DOSEN"):
 
     if not st.session_state.get('dosen_login', False):
         with st.form(key="form_login_dosen"):
@@ -395,7 +395,7 @@ with st.expander("🔑 PANEL DOSEN"):
 
         col_buka, col_tutup = st.columns(2)
         with col_buka:
-            if st.button("✅ Simpan & Aktifkan Kelas", use_container_width=True):
+            if st.button("Simpan & Aktifkan Kelas", use_container_width=True):
                 if input_makul_gabungan and input_semester and input_pertemuan:
                     try:
                         tulis_status_kelas(input_makul_gabungan, input_semester, input_pertemuan, aktif=True)
@@ -406,7 +406,7 @@ with st.expander("🔑 PANEL DOSEN"):
                 else:
                     st.error("Isi semua data kelas terlebih dahulu!")
         with col_tutup:
-            if st.button("🔴 Tutup Presensi", use_container_width=True):
+            if st.button("Tutup Presensi", use_container_width=True):
                 try:
                     tutup_kelas()
                     st.success("Presensi ditutup.")
@@ -451,7 +451,7 @@ with st.expander("🔑 PANEL DOSEN"):
                     df.to_excel(output, index=False, engine='openpyxl')
                     output.seek(0)
                     st.download_button(
-                        label="⬇️ Download Excel",
+                        label="Download Excel",
                         data=output,
                         file_name=f"presensi_{makul_aktif}_pertemuan{pertemuan_aktif}.xlsx",
                         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
