@@ -383,7 +383,7 @@ if st.session_state['halaman'] == 'landing':
             <div style='background:white; border-radius:20px; padding:30px 20px;
                         text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.06);
                         border: 1.5px solid #E2E8F0;'>
-                <div style='font-size:48px;'>🧑‍🎓</div>
+                <div style='font-size:48px;'></div>
                 <div style='font-weight:700; font-size:18px; margin-top:10px; color:#1E293B;'>Mahasiswa</div>
                 <div style='font-size:13px; color:#64748B; margin-top:6px;'>Isi presensi kehadiran</div>
             </div>
@@ -396,7 +396,7 @@ if st.session_state['halaman'] == 'landing':
             <div style='background:white; border-radius:20px; padding:30px 20px;
                         text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.06);
                         border: 1.5px solid #E2E8F0;'>
-                <div style='font-size:48px;'>👨‍🏫</div>
+                <div style='font-size:48px;'></div>
                 <div style='font-weight:700; font-size:18px; margin-top:10px; color:#1E293B;'>Dosen</div>
                 <div style='font-size:13px; color:#64748B; margin-top:6px;'>Kelola kelas & presensi</div>
             </div>
