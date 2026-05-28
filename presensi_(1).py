@@ -113,6 +113,13 @@ st.markdown("""
         color: #3730A3;
         font-weight: 600;
     }
+    .histori-container {
+        background-color: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 10px;
+    }
     </style>
 """, unsafe_allow_html=True)
 
@@ -350,7 +357,7 @@ def ke_halaman(nama):
 st.markdown("""
     <div class="header-banner">
         <h1>PRESENSI AKADEMIK BISNIS DIGITAL</h1>
-        <p>Ver Beta 0.90</p>
+        <p>Ver Beta 0.95</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -636,20 +643,57 @@ elif st.session_state['halaman'] == 'dosen':
             else:
                 st.error("Masukkan URL aplikasi terlebih dahulu!")
 
-        # --- 4. ARSIP & REKAPITULASI (FITUR TERBARU) ---
+        # --- 4. ARSIP, HISTORI & DOWNLOAD REKAP (FITUR UTAMA BARU) ---
         st.markdown("<hr>", unsafe_allow_html=True)
-        st.markdown("<h4 style='color:#4F46E5;'>3. Lihat Rekapitulasi & Arsip Presensi</h4>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#4F46E5;'>3. Panel Rekapitulasi & Histori Presensi</h4>", unsafe_allow_html=True)
 
-        # Dropdown 1: Pilih dari SEMUA Mata Kuliah yang diampu dosen ini (Berdasarkan DATA_JADWAL)
         makul_arsip_opsi = DATA_JADWAL[pilihan_dosen]
-        pilih_makul_arsip = st.selectbox("Pilih Mata Kuliah untuk Lihat Arsip:", options=makul_arsip_opsi)
-        
-        # Format string gabungan untuk mencari nama Sheet di Google Sheets
+        pilih_makul_arsip = st.selectbox("Pilih Mata Kuliah untuk Mengelola Arsip:", options=makul_arsip_opsi)
         input_makul_arsip_gabungan = f"{pilih_makul_arsip} ({pilihan_dosen})"
 
-        # Dropdown 2: Memilih Pertemuan Berapa (1-16)
+        # --- FITUR DOWNLOAD REKAP SEMUA PERTEMUAN (1-16) ---
+        st.markdown("##### 📥 Master Rekapitulasi Semester")
+        if st.button("📊 Ambil Data Semua Pertemuan (1-16)", use_container_width=True):
+            try:
+                sheet   = get_sheet()
+                nama_ws = input_makul_arsip_gabungan.replace("/", "-").replace(":", "-")[:50]
+                ws      = sheet.worksheet(nama_ws)
+                data    = ws.get_all_records()
+                
+                if data:
+                    df_all = pd.DataFrame(data)
+                    
+                    # Urutkan berdasarkan nomor pertemuan dahulu, lalu urutkan NIM agar rapi
+                    if 'Pertemuan Ke' in df_all.columns and 'NIM' in df_all.columns:
+                        df_all['Pertemuan Ke_Int'] = pd.to_numeric(df_all['Pertemuan Ke'], errors='coerce')
+                        df_all = df_all.sort_values(by=['Pertemuan Ke_Int', 'NIM']).drop(columns=['Pertemuan Ke_Int'])
+                    
+                    st.success(f"Berhasil mengagregasi total {len(df_all)} baris data kehadiran semester!")
+                    
+                    output_all = BytesIO()
+                    df_all.to_excel(output_all, index=False, engine='openpyxl')
+                    output_all.seek(0)
+                    
+                    st.download_button(
+                        label="⬇️ DOWNLOAD EXCEL REKAP SEMESTER (P1-P16)",
+                        data=output_all,
+                        file_name=f"REKAP_TOTAL_{pilih_makul_arsip}_1_sampai_16.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True
+                    )
+                else:
+                    st.info("Belum ada rekam presensi yang terdaftar sama sekali untuk mata kuliah ini.")
+            except gspread.exceptions.WorksheetNotFound:
+                st.info("Database presensi kosong karena belum pernah ada mahasiswa yang mengisi di kelas ini.")
+            except Exception as e:
+                st.error(f"Gagal membuat rekap: {e}")
+
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # --- FITUR ARSIP FILTER PER PERTEMUAN ---
+        st.markdown("##### 🔍 Filter Berdasarkan Sesi Pertemuan")
         pilih_pertemuan_arsip = st.selectbox(
-            "Pilih Nomor Pertemuan Perkuliahan:",
+            "Pilih Nomor Pertemuan:",
             options=[str(i) for i in range(1, 17)],
             index=0
         )
@@ -669,45 +713,33 @@ elif st.session_state['halaman'] == 'dosen':
                 
                 if data:
                     df_all = pd.DataFrame(data)
-                    
-                    # FILTER: Ambil data hanya untuk pertemuan yang dipilih
-                    # Pastikan konversi tipe data sama (string ke string)
                     df_filtered = df_all[df_all['Pertemuan Ke'].astype(str) == str(pilih_pertemuan_arsip)]
                     
                     if not df_filtered.empty:
-                        # Buang kolom mata kuliah jika ada supaya rapi
                         if "Mata Kuliah" in df_filtered.columns:
                             df_filtered = df_filtered.drop(columns=["Mata Kuliah"])
                         
                         st.success(f"📋 Ditemukan {len(df_filtered)} data mahasiswa pada Pertemuan {pilih_pertemuan_arsip}")
-                        
-                        # 1. Menampilkan Tabel Filtered
                         st.dataframe(df_filtered, use_container_width=True)
                         
-                        # 2. Menyiapkan Data Excel untuk Download (Hanya data pertemuan terpilih)
                         output = BytesIO()
                         df_filtered.to_excel(output, index=False, engine='openpyxl')
                         output.seek(0)
                         
-                        col_dw, col_space = st.columns([1, 2])
-                        with col_dw:
-                            st.download_button(
-                                label="⬇️ Download Excel Pertemuan Ini",
-                                data=output,
-                                file_name=f"presensi_{pilih_makul_arsip}_Pertemuan_{pilih_pertemuan_arsip}.xlsx",
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                            )
+                        st.download_button(
+                            label="⬇ expansion_button_excel Download Excel Pertemuan Ini",
+                            data=output,
+                            file_name=f"presensi_{pilih_makul_arsip}_P_{pilih_pertemuan_arsip}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
                         
-                        # 3. Menampilkan List Mahasiswa yang Masuk di Bawah
                         st.markdown("---")
                         st.markdown(f"##### 👥 Daftar Kehadiran Sesi Ke-{pilih_pertemuan_arsip}")
                         st.markdown("<div style='background-color: white; padding: 20px; border-radius: 12px; border: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
                         
-                        # Reset index loop agar nomor dimulai dari 1 kembali
                         df_filtered = df_filtered.reset_index(drop=True)
                         for index, row in df_filtered.iterrows():
-                            st.markdown(f"**{index + 1}. {row['Nama']}** ({row['NIM']}) <br><small style='color: #64748B;'>🕒 Masuk pukul: {row['Jam Isi']} WIB | Tgl: {row['Tanggal']}</small>", unsafe_allow_html=True)
-                            
+                            st.markdown(f"**{index + 1}. {row['Nama']}** ({row['NIM']}) <br><small style='color: #64748B;'>🕒 Masuk: {row['Jam Isi']} WIB | Tgl: {row['Tanggal']}</small>", unsafe_allow_html=True)
                         st.markdown("</div>", unsafe_allow_html=True)
                     else:
                         st.warning(f"Tidak ada data presensi mahasiswa untuk **Pertemuan Ke-{pilih_pertemuan_arsip}**.")
@@ -717,3 +749,48 @@ elif st.session_state['halaman'] == 'dosen':
                 st.info(f"Belum ada riwayat presensi yang terekam di database untuk kelas {pilih_makul_arsip}.")
             except Exception as e:
                 st.error(f"Error: {e}")
+
+        # --- FITUR HISTORI JEJAK PERTEMUAN AKTIF ---
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("##### 📜 Histori Log Aktivitas Kelas")
+        st.caption("Berikut adalah histori pertemuan yang sudah memiliki riwayat presensi masuk di database:")
+        
+        try:
+            sheet   = get_sheet()
+            nama_ws = input_makul_arsip_gabungan.replace("/", "-").replace(":", "-")[:50]
+            ws      = sheet.worksheet(nama_ws)
+            data_histori = ws.get_all_records()
+            
+            if data_histori:
+                df_histori = pd.DataFrame(data_histori)
+                if 'Pertemuan Ke' in df_histori.columns:
+                    # Mengelompokkan data berdasarkan pertemuan untuk melihat log statistik unik
+                    summary_histori = df_histori.groupby('Pertemuan Ke').agg(
+                        total_mhs=('NIM', 'count'),
+                        tgl_awal=('Tanggal', 'min'),
+                        tgl_akhir=('Tanggal', 'max')
+                    ).reset_index()
+                    
+                    # Urutkan berdasarkan nomor pertemuan
+                    summary_histori['Pertemuan_Int'] = pd.to_numeric(summary_histori['Pertemuan Ke'], errors='coerce')
+                    summary_histori = summary_histori.sort_values(by='Pertemuan_Int').drop(columns=['Pertemuan_Int'])
+                    
+                    for _, row_h in summary_histori.iterrows():
+                        info_tanggal = row_h['tgl_awal'] if row_h['tgl_awal'] == row_h['tgl_akhir'] else f"{row_h['tgl_awal']} s/d {row_h['tgl_akhir']}"
+                        st.markdown(f"""
+                            <div class="histori-container">
+                                📅 <b>Pertemuan Ke-{row_h['Pertemuan Ke']}</b><br>
+                                <span style='font-size:13px; color:#475569;'>
+                                    👥 Jumlah Mahasiswa Hadir: <b>{row_h['total_mhs']} Orang</b><br>
+                                    🕒 Tanggal Pelaksanaan: {info_tanggal}
+                                </span>
+                            </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.caption("Struktur kolom histori belum siap.")
+            else:
+                st.info("Belum ada histori pertemuan yang terekam aktif.")
+        except gspread.exceptions.WorksheetNotFound:
+            st.info("Belum ada riwayat kelas aktif (sheet database belum terbentuk).")
+        except Exception as e:
+            st.caption(f"Tidak dapat memuat log histori aktivitas: {e}")
