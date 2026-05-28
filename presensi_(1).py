@@ -206,22 +206,31 @@ def tulis_status_kelas(makul, semester, pertemuan, dosen_key, aktif=True):
 
 def tutup_kelas(dosen_key):
     """Nonaktifkan kelas milik dosen tertentu saja."""
-    try:
-        sheet = get_sheet()
-        ws = sheet.worksheet(STATUS_SHEET)
-        data = ws.get_all_values()
-        header = data[0] if data else []
-        try:
-            col_dosen = header.index("dosen_key") + 1
-            col_aktif = header.index("aktif") + 1
-        except ValueError:
-            return
-        for i, row in enumerate(data[1:], start=2):
-            if len(row) >= col_dosen and row[col_dosen - 1] == dosen_key:
-                ws.update_cell(i, col_aktif, "0")
-                break
-    except Exception:
-        pass
+    sheet = get_sheet()
+    ws = sheet.worksheet(STATUS_SHEET)
+    data = ws.get_all_values()
+    header = data[0] if data else []
+    col_dosen = header.index("dosen_key") + 1
+    col_aktif = header.index("aktif") + 1
+    for i, row in enumerate(data[1:], start=2):
+        if len(row) >= col_dosen and row[col_dosen - 1] == dosen_key:
+            ws.update_cell(i, col_aktif, "0")
+            return True
+    return False
+
+def tutup_kelas_by_makul(makul):
+    """Nonaktifkan kelas berdasarkan nama makul (untuk panel kelola semua kelas)."""
+    sheet = get_sheet()
+    ws = sheet.worksheet(STATUS_SHEET)
+    data = ws.get_all_values()
+    header = data[0] if data else []
+    col_makul = header.index("makul") + 1
+    col_aktif = header.index("aktif") + 1
+    for i, row in enumerate(data[1:], start=2):
+        if len(row) >= col_makul and row[col_makul - 1] == makul:
+            ws.update_cell(i, col_aktif, "0")
+            return True
+    return False
 
 # ============================================================
 # FUNGSI SIMPAN PRESENSI
@@ -324,107 +333,162 @@ DATA_JADWAL = {
 }
 
 # ============================================================
-# BACA SEMUA KELAS AKTIF
+# NAVIGASI HALAMAN
 # ============================================================
-semua_kelas_aktif = baca_semua_kelas_aktif()
+if 'halaman' not in st.session_state:
+    st.session_state['halaman'] = 'landing'
+
+def ke_halaman(nama):
+    st.session_state['halaman'] = nama
+    st.rerun()
+
+waktu_sekarang = datetime.now()
 
 # ============================================================
-# HEADER
+# HEADER (tampil di semua halaman)
 # ============================================================
 st.markdown("""
     <div class="header-banner">
         <h1>PRESENSI AKADEMIK BISNIS DIGITAL</h1>
-        <p>Ver Beta 0.40 — Multi Kelas</p>
-    </div>
-""", unsafe_allow_html=True)
-
-if semua_kelas_aktif:
-    st.success(f"📍 **{len(semua_kelas_aktif)} Kelas Aktif Saat Ini:**")
-    for k in semua_kelas_aktif:
-        st.markdown(
-            f"<div class='kelas-badge'>📚 {k['makul']} &nbsp;|&nbsp; Sem {k['semester']} &nbsp;|&nbsp; Pertemuan {k['pertemuan']}</div>",
-            unsafe_allow_html=True
-        )
-else:
-    st.warning("⚠️ **Status:** Belum ada kelas yang dibuka oleh Dosen.")
-
-waktu_sekarang = datetime.now()
-st.markdown(f"""
-    <div class="clock-container">
-        🕒 WAKTU SERVER AKTIF: {waktu_sekarang.strftime('%d-%m-%Y')} pukul {waktu_sekarang.strftime('%H:%M:%S')} WIB
-        <br><small style="color: #D97706; font-weight: normal;">
-            *Waktu scan akan tercatat secara akurat di database.
-        </small>
+        <p>Ver Beta 0.50 — Multi Kelas</p>
     </div>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# FORM MAHASISWA — DENGAN PILIHAN KELAS AKTIF
+# HALAMAN LANDING — pilih peran
 # ============================================================
-with st.form(key="form_presensi", clear_on_submit=True):
-    nama = st.text_input("Nama Lengkap Mahasiswa", placeholder=" ")
-    nim  = st.text_input("NIM (Nomor Induk Mahasiswa)", placeholder="")
+if st.session_state['halaman'] == 'landing':
+
+    semua_kelas_aktif = baca_semua_kelas_aktif()
 
     if semua_kelas_aktif:
-        def label_kelas(k):
+        st.success(f"📍 **{len(semua_kelas_aktif)} Kelas Aktif Saat Ini:**")
+        for k in semua_kelas_aktif:
             nama_makul = k['makul'].rsplit(' (', 1)[0]
-            nama_dosen_full = k['makul'].rsplit(' (', 1)[-1].rstrip(')')
-            nama_dosen_singkat = nama_dosen_full.split(',')[0]
-            return f"{nama_makul} — {nama_dosen_singkat} | Pertemuan {k['pertemuan']}"
-        opsi_kelas = [label_kelas(k) for k in semua_kelas_aktif]
-        pilihan_kelas_label = st.selectbox(
-            "🏫 Pilih Kelas yang Sedang Kamu Ikuti",
-            options=opsi_kelas,
-            help="Pilih sesuai mata kuliah yang kamu ikuti sekarang."
-        )
-    else:
-        pilihan_kelas_label = None
-        st.info("Belum ada kelas aktif. Tunggu dosen membuka presensi.")
-
-    materi = st.text_area(
-        "Materi Kuliah Hari Ini",
-        placeholder="Masukkan topik materi yang dibahas",
-        height=120
-    )
-    submit_button = st.form_submit_button(label="KIRIM KEHADIRAN AKTIF")
-
-if submit_button:
-    if not semua_kelas_aktif or pilihan_kelas_label is None:
-        st.error("Presensi gagal! Dosen belum mengaktifkan kelas hari ini.")
-    elif nama and nim and materi:
-        idx_pilihan   = opsi_kelas.index(pilihan_kelas_label)
-        kelas_dipilih = semua_kelas_aktif[idx_pilihan]
-
-        tanggal_hari_ini = waktu_sekarang.strftime("%Y-%m-%d")
-        jam_menit_detik  = waktu_sekarang.strftime("%H:%M:%S")
-        try:
-            simpan_ke_sheets({
-                "Tanggal":          tanggal_hari_ini,
-                "Jam Isi":          jam_menit_detik,
-                "Mata Kuliah":      kelas_dipilih["makul"],
-                "Semester":         kelas_dipilih["semester"],
-                "Pertemuan Ke":     kelas_dipilih["pertemuan"],
-                "NIM":              nim.strip(),
-                "Nama":             nama.strip(),
-                "Rangkuman Materi": materi.strip()
-            })
-            st.balloons()
-            st.success(
-                f"✨ Kehadiran berhasil! **{nama}** ({nim}) tercatat di "
-                f"**{kelas_dipilih['makul']}** pukul {jam_menit_detik} WIB."
+            nama_dosen = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
+            st.markdown(
+                f"<div class='kelas-badge'>📚 {nama_makul} &nbsp;—&nbsp; {nama_dosen} &nbsp;|&nbsp; Pertemuan {k['pertemuan']}</div>",
+                unsafe_allow_html=True
             )
-        except Exception as e:
-            st.error(f"Gagal menyimpan ke Google Sheets: {e}")
     else:
-        st.error("Gagal mengirim! Semua kolom wajib diisi.")
+        st.warning("⚠️ Belum ada kelas yang dibuka oleh Dosen.")
+
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align:center; color:#4F46E5;'>Kamu siapa?</h3>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    col_mhs, col_dos = st.columns(2)
+    with col_mhs:
+        st.markdown("""
+            <div style='background:white; border-radius:20px; padding:30px 20px;
+                        text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.06);
+                        border: 1.5px solid #E2E8F0;'>
+                <div style='font-size:48px;'>🎓</div>
+                <div style='font-weight:700; font-size:18px; margin-top:10px; color:#1E293B;'>Mahasiswa</div>
+                <div style='font-size:13px; color:#64748B; margin-top:6px;'>Isi presensi kehadiran</div>
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:12px'></div>", unsafe_allow_html=True)
+        if st.button("Masuk sebagai Mahasiswa", use_container_width=True, key="btn_mhs"):
+            ke_halaman('mahasiswa')
+    with col_dos:
+        st.markdown("""
+            <div style='background:white; border-radius:20px; padding:30px 20px;
+                        text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.06);
+                        border: 1.5px solid #E2E8F0;'>
+                <div style='font-size:48px;'>👨‍🏫</div>
+                <div style='font-weight:700; font-size:18px; margin-top:10px; color:#1E293B;'>Dosen</div>
+                <div style='font-size:13px; color:#64748B; margin-top:6px;'>Kelola kelas & presensi</div>
+            </div>
+        """, unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:12px'></div>", unsafe_allow_html=True)
+        if st.button("Masuk sebagai Dosen", use_container_width=True, key="btn_dos"):
+            ke_halaman('dosen')
 
 # ============================================================
-# PANEL DOSEN — DILINDUNGI PASSWORD
+# HALAMAN MAHASISWA — form presensi
 # ============================================================
-st.markdown("<br><br>", unsafe_allow_html=True)
-with st.expander("PANEL DOSEN"):
+elif st.session_state['halaman'] == 'mahasiswa':
 
+    semua_kelas_aktif = baca_semua_kelas_aktif()
+
+    if st.button("← Kembali", key="back_mhs"):
+        ke_halaman('landing')
+
+    st.markdown(f"""
+        <div class="clock-container">
+            🕒 {waktu_sekarang.strftime('%d-%m-%Y')} pukul {waktu_sekarang.strftime('%H:%M:%S')} WIB
+            <br><small style="color: #D97706; font-weight: normal;">*Waktu scan tercatat akurat di database.</small>
+        </div>
+    """, unsafe_allow_html=True)
+
+    with st.form(key="form_presensi", clear_on_submit=True):
+        nama = st.text_input("Nama Lengkap Mahasiswa", placeholder=" ")
+        nim  = st.text_input("NIM (Nomor Induk Mahasiswa)", placeholder="")
+
+        if semua_kelas_aktif:
+            def label_kelas(k):
+                nama_makul = k['makul'].rsplit(' (', 1)[0]
+                nama_dosen_singkat = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
+                return f"{nama_makul} — {nama_dosen_singkat} | Pertemuan {k['pertemuan']}"
+            opsi_kelas = [label_kelas(k) for k in semua_kelas_aktif]
+            pilihan_kelas_label = st.selectbox(
+                "🏫 Pilih Kelas yang Sedang Kamu Ikuti",
+                options=opsi_kelas,
+                help="Pilih sesuai mata kuliah yang kamu ikuti sekarang."
+            )
+        else:
+            pilihan_kelas_label = None
+            st.warning("⚠️ Belum ada kelas aktif. Tunggu dosen membuka presensi.")
+
+        materi = st.text_area(
+            "Materi Kuliah Hari Ini",
+            placeholder="Masukkan topik materi yang dibahas",
+            height=120
+        )
+        submit_button = st.form_submit_button(label="KIRIM KEHADIRAN AKTIF")
+
+    if submit_button:
+        if not semua_kelas_aktif or pilihan_kelas_label is None:
+            st.error("Presensi gagal! Dosen belum mengaktifkan kelas hari ini.")
+        elif nama and nim and materi:
+            idx_pilihan   = opsi_kelas.index(pilihan_kelas_label)
+            kelas_dipilih = semua_kelas_aktif[idx_pilihan]
+            tanggal_hari_ini = waktu_sekarang.strftime("%Y-%m-%d")
+            jam_menit_detik  = waktu_sekarang.strftime("%H:%M:%S")
+            try:
+                simpan_ke_sheets({
+                    "Tanggal":          tanggal_hari_ini,
+                    "Jam Isi":          jam_menit_detik,
+                    "Mata Kuliah":      kelas_dipilih["makul"],
+                    "Semester":         kelas_dipilih["semester"],
+                    "Pertemuan Ke":     kelas_dipilih["pertemuan"],
+                    "NIM":              nim.strip(),
+                    "Nama":             nama.strip(),
+                    "Rangkuman Materi": materi.strip()
+                })
+                st.balloons()
+                nama_makul_bersih = kelas_dipilih['makul'].rsplit(' (', 1)[0]
+                st.success(
+                    f"✨ Kehadiran berhasil! **{nama}** ({nim}) tercatat di "
+                    f"**{nama_makul_bersih}** pukul {jam_menit_detik} WIB."
+                )
+            except Exception as e:
+                st.error(f"Gagal menyimpan ke Google Sheets: {e}")
+        else:
+            st.error("Gagal mengirim! Semua kolom wajib diisi.")
+
+# ============================================================
+# HALAMAN DOSEN — login + panel kelola kelas
+# ============================================================
+elif st.session_state['halaman'] == 'dosen':
+
+    # Tombol kembali hanya kalau belum login
     if not st.session_state.get('dosen_login', False):
+        if st.button("← Kembali", key="back_dos"):
+            ke_halaman('landing')
+
+        st.markdown("<h3 style='color:#4F46E5; text-align:center;'>Login Dosen</h3>", unsafe_allow_html=True)
         with st.form(key="form_login_dosen"):
             password_input = st.text_input("Password", type="password", placeholder="Masukkan password dosen...")
             tombol_login   = st.form_submit_button("Login")
@@ -433,18 +497,19 @@ with st.expander("PANEL DOSEN"):
             PASSWORD_DOSEN = st.secrets.get("password_dosen", "dosen123")
             if password_input == PASSWORD_DOSEN:
                 st.session_state['dosen_login'] = True
-                st.success("Login berhasil!")
                 st.rerun()
             else:
                 st.error("Password salah!")
+
     else:
+        # Header panel dengan tombol logout
         col_title, col_logout = st.columns([4, 1])
         with col_title:
-            st.markdown("#### ✅ Panel Dosen Aktif")
+            st.markdown("#### ✅ Panel Dosen")
         with col_logout:
             if st.button("Logout"):
                 st.session_state['dosen_login'] = False
-                st.rerun()
+                ke_halaman('landing')
 
         # --- 1. ATUR KELAS ---
         st.markdown("<h4 style='color:#4F46E5;'>1. Atur & Aktifkan Kelas</h4>", unsafe_allow_html=True)
@@ -452,26 +517,17 @@ with st.expander("PANEL DOSEN"):
         pilihan_dosen = st.selectbox(
             "Nama Dosen Pengampu",
             options=list(DATA_JADWAL.keys()),
-            placeholder="Pilih Nama Dosen..."
         )
-
         daftar_makul  = DATA_JADWAL[pilihan_dosen]
-        pilihan_makul = st.selectbox(
-            "Nama Mata Kuliah",
-            options=daftar_makul,
-            placeholder="Pilih Mata Kuliah..."
-        )
+        pilihan_makul = st.selectbox("Nama Mata Kuliah", options=daftar_makul)
 
         input_makul_gabungan = f"{pilihan_makul} ({pilihan_dosen})"
         dosen_key            = pilihan_dosen
 
-        # Tampilkan status kelas dosen yang dipilih
         status_dosen = baca_status_kelas_dosen(dosen_key)
         if status_dosen["aktif"]:
-            st.info(
-                f"🟢 Kelas aktif dosen ini: **{status_dosen['makul']}** "
-                f"| Sem {status_dosen['semester']} | Pertemuan {status_dosen['pertemuan']}"
-            )
+            nama_makul_aktif = status_dosen['makul'].rsplit(' (', 1)[0]
+            st.info(f"🟢 Kelas aktif: **{nama_makul_aktif}** | Sem {status_dosen['semester']} | Pertemuan {status_dosen['pertemuan']}")
         else:
             st.caption("🔴 Dosen ini belum membuka kelas saat ini.")
 
@@ -491,8 +547,8 @@ with st.expander("PANEL DOSEN"):
 
         col_buka, col_tutup = st.columns(2)
         with col_buka:
-            if st.button("Simpan & Aktifkan Kelas", use_container_width=True):
-                if input_makul_gabungan and input_semester and input_pertemuan:
+            if st.button("✅ Aktifkan Kelas", use_container_width=True):
+                if input_semester and input_pertemuan:
                     try:
                         tulis_status_kelas(
                             input_makul_gabungan, input_semester, input_pertemuan,
@@ -503,29 +559,48 @@ with st.expander("PANEL DOSEN"):
                     except Exception as e:
                         st.error(f"Gagal menyimpan: {e}")
                 else:
-                    st.error("Isi semua data kelas terlebih dahulu!")
+                    st.error("Isi semester dan pertemuan terlebih dahulu!")
         with col_tutup:
-            if st.button("Tutup Presensi Saya", use_container_width=True):
+            if st.button("⛔ Tutup Kelas Saya", use_container_width=True):
                 try:
-                    tutup_kelas(dosen_key=dosen_key)
-                    st.success("Presensi kelas Anda telah ditutup.")
+                    hasil = tutup_kelas(dosen_key=dosen_key)
+                    if hasil:
+                        st.success("Kelas berhasil ditutup.")
+                    else:
+                        st.warning("Tidak ada kelas aktif untuk dosen ini.")
                     st.rerun()
                 except Exception as e:
                     st.error(f"Gagal menutup: {e}")
 
-        # Ringkasan semua kelas aktif
+        # --- 2. KELOLA SEMUA KELAS AKTIF ---
         st.markdown("<hr>", unsafe_allow_html=True)
-        st.markdown("<h4 style='color:#4F46E5;'>📋 Semua Kelas Aktif Saat Ini</h4>", unsafe_allow_html=True)
-        if semua_kelas_aktif:
-            for k in semua_kelas_aktif:
-                st.markdown(
-                    f"<div class='kelas-badge'>📚 {k['makul']} &nbsp;|&nbsp; Sem {k['semester']} &nbsp;|&nbsp; Pertemuan {k['pertemuan']}</div>",
-                    unsafe_allow_html=True
-                )
-        else:
-            st.caption("Belum ada kelas aktif.")
+        st.markdown("<h4 style='color:#4F46E5;'>📋 Kelola Semua Kelas Aktif</h4>", unsafe_allow_html=True)
 
-        # --- 2. QR CODE ---
+        kelas_aktif_sekarang = baca_semua_kelas_aktif()
+        if kelas_aktif_sekarang:
+            for idx_k, k in enumerate(kelas_aktif_sekarang):
+                nm = k['makul'].rsplit(' (', 1)[0]
+                nd = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
+                col_info, col_btn = st.columns([5, 2])
+                with col_info:
+                    st.markdown(
+                        f"<div class='kelas-badge'>📚 {nm}<br>"
+                        f"<small style='font-weight:400'>{nd} &nbsp;|&nbsp; Sem {k['semester']} &nbsp;|&nbsp; Pertemuan {k['pertemuan']}</small></div>",
+                        unsafe_allow_html=True
+                    )
+                with col_btn:
+                    st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
+                    if st.button("⛔ Tutup", key=f"tutup_kelas_{idx_k}", use_container_width=True):
+                        try:
+                            tutup_kelas_by_makul(k['makul'])
+                            st.success(f"{nm} ditutup.")
+                            st.rerun()
+                        except Exception as e:
+                            st.error(f"Gagal: {e}")
+        else:
+            st.caption("Belum ada kelas aktif saat ini.")
+
+        # --- 3. QR CODE ---
         st.markdown("<hr>", unsafe_allow_html=True)
         st.markdown("<h4 style='color:#4F46E5;'>2. Generate QR Code Absensi</h4>", unsafe_allow_html=True)
         url_aplikasi = st.text_input("URL Aplikasi", placeholder="https://nama-app.streamlit.app")
@@ -534,7 +609,7 @@ with st.expander("PANEL DOSEN"):
             if url_aplikasi:
                 qr_image = generate_qr(url_aplikasi)
                 st.image(qr_image,
-                         caption=f"QR Presensi — {input_makul_gabungan} Pertemuan {input_pertemuan}",
+                         caption=f"QR Presensi — {pilihan_makul} Pertemuan {input_pertemuan}",
                          width=260)
                 st.download_button(
                     label="⬇️ Download QR Code",
@@ -545,15 +620,16 @@ with st.expander("PANEL DOSEN"):
             else:
                 st.error("Masukkan URL aplikasi terlebih dahulu!")
 
-        # --- 3. LIHAT DATA ---
+        # --- 4. LIHAT DATA ---
         st.markdown("<hr>", unsafe_allow_html=True)
         st.markdown("<h4 style='color:#4F46E5;'>3. Lihat & Download Data Presensi</h4>", unsafe_allow_html=True)
 
         if not status_dosen["aktif"]:
-            st.warning("⚠️ Tidak ada kelas aktif saat ini. Aktifkan kelas terlebih dahulu untuk melihat data.")
+            st.warning("⚠️ Aktifkan kelas terlebih dahulu untuk melihat data.")
         else:
-            makul_lihat = status_dosen["makul"]
-            st.caption(f"📚 Menampilkan data untuk: **{makul_lihat}** | Pertemuan {status_dosen['pertemuan']}")
+            makul_lihat      = status_dosen["makul"]
+            nama_makul_lihat = makul_lihat.rsplit(' (', 1)[0]
+            st.caption(f"📚 Data untuk: **{nama_makul_lihat}** | Pertemuan {status_dosen['pertemuan']}")
 
             if st.button("Tampilkan Data dari Google Sheets"):
                 try:
@@ -570,9 +646,9 @@ with st.expander("PANEL DOSEN"):
                         df.to_excel(output, index=False, engine='openpyxl')
                         output.seek(0)
                         st.download_button(
-                            label="Download Excel",
+                            label="⬇️ Download Excel",
                             data=output,
-                            file_name=f"presensi_{makul_lihat}.xlsx",
+                            file_name=f"presensi_{nama_makul_lihat}.xlsx",
                             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                         )
                     else:
