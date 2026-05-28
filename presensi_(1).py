@@ -5,14 +5,18 @@ import qrcode
 from io import BytesIO
 import gspread
 from google.oauth2.service_account import Credentials
+import pytz # Tambahan library untuk timezone
 
 # ============================================================
-# INISIALISASI SESSION STATE
+# SET ZONA WAKTU (WIB) & INITIALISASI SESSION STATE
 # ============================================================
+tz_wib = pytz.timezone('Asia/Jakarta')
+waktu_sekarang = datetime.now(tz_wib)
+
 if 'dosen_login' not in st.session_state:
     st.session_state['dosen_login'] = False
 
-# State untuk membatasi mahasiswa absen berkali-kali
+# State untuk membatasi mahasiswa absen berkali-kali di perangkat yang sama
 if 'sudah_presensi' not in st.session_state:
     st.session_state['sudah_presensi'] = False
 
@@ -34,7 +38,7 @@ st.set_page_config(
 st.markdown("""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-    html, body, [class*="css"] {
+    html, body, [class*=\"css\"] {
         font-family: 'Plus Jakarta Sans', sans-serif;
         color: #2D3748;
     }
@@ -129,12 +133,10 @@ def get_sheet():
 
 # ============================================================
 # FUNGSI BACA / TULIS STATUS MULTI-KELAS KE GOOGLE SHEETS
-# Header: makul | semester | pertemuan | aktif | dosen_key
 # ============================================================
 STATUS_SHEET = "STATUS_KELAS"
 
 def baca_semua_kelas_aktif():
-    """Baca semua kelas yang sedang aktif dari Google Sheets."""
     try:
         sheet = get_sheet()
         try:
@@ -160,7 +162,6 @@ def baca_semua_kelas_aktif():
         return []
 
 def baca_status_kelas_dosen(dosen_key):
-    """Baca status kelas milik dosen tertentu."""
     try:
         sheet = get_sheet()
         try:
@@ -182,7 +183,6 @@ def baca_status_kelas_dosen(dosen_key):
     return {"makul": "Belum Diatur", "semester": "-", "pertemuan": "-", "aktif": False}
 
 def tulis_status_kelas(makul, semester, pertemuan, dosen_key, aktif=True):
-    """Simpan/update status kelas dosen (upsert by dosen_key)."""
     sheet = get_sheet()
     try:
         ws = sheet.worksheet(STATUS_SHEET)
@@ -212,7 +212,6 @@ def tulis_status_kelas(makul, semester, pertemuan, dosen_key, aktif=True):
         ws.append_row(new_row)
 
 def tutup_kelas(dosen_key):
-    """Nonaktifkan kelas milik dosen tertentu saja."""
     sheet = get_sheet()
     ws = sheet.worksheet(STATUS_SHEET)
     data = ws.get_all_values()
@@ -226,7 +225,6 @@ def tutup_kelas(dosen_key):
     return False
 
 def tutup_kelas_by_makul(makul):
-    """Nonaktifkan kelas berdasarkan nama makul (untuk panel kelola semua kelas)."""
     sheet = get_sheet()
     ws = sheet.worksheet(STATUS_SHEET)
     data = ws.get_all_values()
@@ -345,8 +343,6 @@ DATA_JADWAL = {
 def ke_halaman(nama):
     st.session_state['halaman'] = nama
     st.rerun()
-tz_wib = pytz.timezone('Asia/Jakarta')
-waktu_sekarang = datetime.now()
 
 # ============================================================
 # HEADER (tampil di semua halaman)
@@ -354,7 +350,7 @@ waktu_sekarang = datetime.now()
 st.markdown("""
     <div class="header-banner">
         <h1>PRESENSI AKADEMIK BISNIS DIGITAL</h1>
-        <p>Ver Beta 0.71</p>
+        <p>Ver Beta 0.80</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -387,7 +383,7 @@ if st.session_state['halaman'] == 'landing':
             <div style='background:white; border-radius:20px; padding:30px 20px;
                         text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.06);
                         border: 1.5px solid #E2E8F0;'>
-                <div style='font-size:48px;'> </div>
+                <div style='font-size:48px;'>🧑‍🎓</div>
                 <div style='font-weight:700; font-size:18px; margin-top:10px; color:#1E293B;'>Mahasiswa</div>
                 <div style='font-size:13px; color:#64748B; margin-top:6px;'>Isi presensi kehadiran</div>
             </div>
@@ -400,7 +396,7 @@ if st.session_state['halaman'] == 'landing':
             <div style='background:white; border-radius:20px; padding:30px 20px;
                         text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.06);
                         border: 1.5px solid #E2E8F0;'>
-                <div style='font-size:48px;'></div>
+                <div style='font-size:48px;'>👨‍🏫</div>
                 <div style='font-weight:700; font-size:18px; margin-top:10px; color:#1E293B;'>Dosen</div>
                 <div style='font-size:13px; color:#64748B; margin-top:6px;'>Kelola kelas & presensi</div>
             </div>
@@ -427,7 +423,7 @@ elif st.session_state['halaman'] == 'mahasiswa':
         st.markdown(f"""
             <div class="clock-container">
                 🕒 {waktu_sekarang.strftime('%d-%m-%Y')} pukul {waktu_sekarang.strftime('%H:%M:%S')} WIB
-                <br><small style="color: #D97706; font-weight: normal;">*Waktu scan tercatat akurat di database.</small>
+                <br><small style="color: #D97706; font-weight: normal;">*Waktu tercatat akurat menggunakan WIB (Asia/Jakarta).</small>
             </div>
         """, unsafe_allow_html=True)
 
@@ -466,16 +462,14 @@ elif st.session_state['halaman'] == 'mahasiswa':
                 tanggal_hari_ini = waktu_sekarang.strftime("%Y-%m-%d")
                 jam_menit_detik  = waktu_sekarang.strftime("%H:%M:%S")
                 
-                # --- MULAI BLOK VALIDASI DATABASE ---
+                # --- VALIDASI DATABASE: CEK NIM DOUBLE DI PERTEMUAN INI ---
                 try:
                     sheet = get_sheet()
                     nama_ws = kelas_dipilih["makul"].replace("/", "-").replace(":", "-")[:50]
                     ws = get_or_create_worksheet(sheet, nama_ws)
                     
-                    # Ambil semua data absen yang sudah masuk
                     data_absen_eksisting = ws.get_all_records()
                     
-                    # Cek apakah NIM ini sudah absen di pertemuan ini
                     sudah_absen = False
                     for baris in data_absen_eksisting:
                         if str(baris.get('NIM', '')).strip() == nim.strip() and str(baris.get('Pertemuan Ke', '')) == str(kelas_dipilih["pertemuan"]):
@@ -483,9 +477,9 @@ elif st.session_state['halaman'] == 'mahasiswa':
                             break
                     
                     if sudah_absen:
-                        st.error(f"⚠️ Ditolak: NIM {nim} sudah terdaftar hadir pada pertemuan {kelas_dipilih['pertemuan']}!")
+                        st.error(f"❌ Ditolak: NIM {nim} sudah mengisi presensi pada Pertemuan Ke-{kelas_dipilih['pertemuan']}!")
                     else:
-                        # Jika belum absen, simpan datanya
+                        # Jika lolos validasi database, simpan data ke sheet
                         simpan_ke_sheets({
                             "Tanggal":          tanggal_hari_ini,
                             "Jam Isi":          jam_menit_detik,
@@ -501,8 +495,7 @@ elif st.session_state['halaman'] == 'mahasiswa':
                         st.rerun()
                         
                 except Exception as e:
-                    st.error(f"Gagal memproses data: {e}")
-                # --- AKHIR BLOK VALIDASI DATABASE ---
+                    st.error(f"Gagal memproses validasi database: {e}")
             else:
                 st.error("Gagal mengirim! Semua kolom wajib diisi.")
 
@@ -511,7 +504,6 @@ elif st.session_state['halaman'] == 'mahasiswa':
 # ============================================================
 elif st.session_state['halaman'] == 'dosen':
 
-    # Tombol kembali hanya kalau belum login
     if not st.session_state.get('dosen_login', False):
         if st.button("← Kembali", key="back_dos"):
             ke_halaman('landing')
@@ -530,7 +522,6 @@ elif st.session_state['halaman'] == 'dosen':
                 st.error("Password salah!")
 
     else:
-        # Header panel dengan tombol logout
         col_title, col_logout = st.columns([4, 1])
         with col_title:
             st.markdown("#### ✅ Panel Dosen")
@@ -657,7 +648,6 @@ elif st.session_state['halaman'] == 'dosen':
         if not kelas_aktif_sekarang:
             st.warning("⚠️ Belum ada kelas yang aktif saat ini. Aktifkan kelas terlebih dahulu.")
         else:
-            # Dosen bisa memilih kelas mana saja yang sedang aktif untuk dilihat
             opsi_makul_aktif = [k['makul'] for k in kelas_aktif_sekarang]
             pilih_makul_lihat = st.selectbox("Pilih Kelas Aktif yang Ingin Dilihat:", options=opsi_makul_aktif)
             
@@ -665,7 +655,6 @@ elif st.session_state['halaman'] == 'dosen':
             with col_tampil:
                 btn_tampil = st.button("Tampilkan Data Terkini", use_container_width=True)
             with col_reload:
-                # Tombol ini secara otomatis akan me-rerun script dan mengambil data terbaru dari Sheets
                 btn_reload = st.button("🔄 Reload Data", use_container_width=True)
 
             if btn_tampil or btn_reload:
@@ -680,10 +669,8 @@ elif st.session_state['halaman'] == 'dosen':
                         if "Mata Kuliah" in df.columns:
                             df = df.drop(columns=["Mata Kuliah"])
                         
-                        # 1. Menampilkan Tabel
                         st.dataframe(df, use_container_width=True)
                         
-                        # 2. Menyiapkan Data Excel untuk Download
                         output = BytesIO()
                         df.to_excel(output, index=False, engine='openpyxl')
                         output.seek(0)
@@ -697,12 +684,10 @@ elif st.session_state['halaman'] == 'dosen':
                                 mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                             )
                         
-                        # 3. Menampilkan List Mahasiswa yang Masuk di Bawah
                         st.markdown("---")
                         st.markdown(f"##### 👥 Daftar Kehadiran ({len(df)} Mahasiswa)")
                         st.markdown("<div style='background-color: white; padding: 20px; border-radius: 12px; border: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
                         
-                        # Looping isi dataframe
                         for index, row in df.iterrows():
                             st.markdown(f"**{index + 1}. {row['Nama']}** ({row['NIM']}) <br><small style='color: #64748B;'>🕒 Masuk pukul: {row['Jam Isi']} WIB</small>", unsafe_allow_html=True)
                             
