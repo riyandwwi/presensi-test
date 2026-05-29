@@ -552,7 +552,7 @@ elif st.session_state['halaman'] == 'dosen':
         # Header Dashboard Dosen
         col_title, col_logout = st.columns([4, 1])
         with col_title:
-            st.markdown(" Dashboard Pengelola")
+            st.markdown(" Dashboard Dosen")
         with col_logout:
             if st.button("Keluar", use_container_width=True):
                 st.session_state['dosen_login'] = False
