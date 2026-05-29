@@ -455,9 +455,9 @@ elif st.session_state['halaman'] == 'mahasiswa':
             # Layout input 2 kolom agar lebih rapi di layar lebar
             col_nama, col_nim = st.columns(2)
             with col_nama:
-                nama = st.text_input("Nama Lengkap", placeholder="Contoh: Budi Santoso")
+                nama = st.text_input("Nama Lengkap", placeholder="")
             with col_nim:
-                nim  = st.text_input("NIM", placeholder="Contoh: 2104010XX")
+                nim  = st.text_input("NIM", placeholder="")
 
             if semua_kelas_aktif:
                 def label_kelas(k):
@@ -552,7 +552,7 @@ elif st.session_state['halaman'] == 'dosen':
         # Header Dashboard Dosen
         col_title, col_logout = st.columns([4, 1])
         with col_title:
-            st.markdown("### 🎛️ Dashboard Pengelola")
+            st.markdown(" Dashboard Pengelola")
         with col_logout:
             if st.button("Keluar", use_container_width=True):
                 st.session_state['dosen_login'] = False
