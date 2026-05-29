@@ -35,93 +35,101 @@ st.set_page_config(
 # ============================================================
 # CSS
 # ============================================================
+# ============================================================
+# CSS
+# ============================================================
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-    html, body, [class*=\"css\"] {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        color: #2D3748;
+    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap');
+    html, body, [class*="css"], p, span, div, label { font-family: 'DM Sans', sans-serif !important; color: #0F172A; }
+    h1, h2, h3, h4, h5 { font-family: 'Sora', sans-serif !important; }
+    .stApp { background-color: #F1F5F9; }
+    header {visibility: hidden;} footer {visibility: hidden;} #MainMenu {visibility: hidden;}
+
+    /* TOP BAR */
+    .top-bar {
+        background: #0F172A; border-radius: 16px; padding: 18px 24px;
+        display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;
     }
-    .stApp {
-        background: linear-gradient(135deg, #F0F4F8 0%, #E2E8F0 100%);
+    .top-bar-logo {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 38px; height: 38px; background: #38BDF8; border-radius: 9px;
+        font-family: 'Sora', sans-serif !important; font-weight: 800; font-size: 14px;
+        color: #0F172A; margin-right: 12px; vertical-align: middle;
     }
-    header {visibility: hidden;}
-    footer {visibility: hidden;}
-    #MainMenu {visibility: hidden;}
-    .header-banner {
-        background: linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%);
-        padding: 30px;
-        border-radius: 20px;
-        color: white;
-        text-align: center;
-        margin-bottom: 25px;
-        box-shadow: 0 10px 25px rgba(79, 70, 229, 0.15);
+    .top-bar-title { font-family: 'Sora', sans-serif !important; font-weight: 700; font-size: 15px; color: #F8FAFC; display: inline; }
+    .top-bar-sub { font-size: 11px; color: #64748B; display: block; margin-top: 1px; }
+    .top-bar-date { font-size: 12px; color: #64748B; font-weight: 500; }
+
+    /* ROLE CARDS */
+    .role-card {
+        background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 18px;
+        padding: 32px 20px 24px; text-align: center;
     }
-    .header-banner h1 { color: white !important; font-weight: 800; font-size: 32px; margin-bottom: 5px; }
-    .header-banner p  { color: #E0E7FF !important; font-size: 16px; opacity: 0.9; }
+    .role-card-label { font-family: 'Sora', sans-serif !important; font-weight: 700; font-size: 19px; color: #0F172A; margin-bottom: 6px; }
+    .role-card-desc { font-size: 13px; color: #64748B; line-height: 1.5; }
+    .role-divider { width: 36px; height: 3px; background: #38BDF8; border-radius: 99px; margin: 14px auto 0; }
+
+    /* KELAS BADGE */
+    .kelas-badge {
+        background: #FFFFFF; border: 1.5px solid #E2E8F0; border-left: 4px solid #38BDF8;
+        border-radius: 12px; padding: 11px 16px; margin-bottom: 8px;
+        font-size: 14px; color: #0F172A; font-weight: 600;
+    }
+    .kelas-badge small { color: #64748B; font-weight: 400; }
+
+    /* CLOCK */
+    .clock-container {
+        background: #0F172A; border-radius: 12px; padding: 14px 18px;
+        text-align: center; margin-bottom: 20px; color: #38BDF8;
+        font-family: 'Sora', sans-serif !important; font-weight: 700; font-size: 15px; letter-spacing: 0.3px;
+    }
+    .clock-container small { color: #475569; font-weight: 400; font-size: 11px; }
+
+    /* FORM */
     div[data-testid="stForm"] {
-        background: rgba(255,255,255,0.85);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,0.5);
-        border-radius: 24px !important;
-        padding: 40px !important;
-        box-shadow: 0 20px 40px rgba(0,0,0,0.04) !important;
+        background: #FFFFFF !important; border: 1.5px solid #E2E8F0 !important;
+        border-radius: 18px !important; padding: 30px !important;
+        box-shadow: 0 2px 16px rgba(0,0,0,0.04) !important;
     }
-    div[data-testid="stTextInput"] input,
-    div[data-testid="stTextArea"] textarea {
-        background-color: #FFFFFF !important;
-        border: 1.5px solid #E2E8F0 !important;
-        border-radius: 12px !important;
-        padding: 12px 16px !important;
-        font-size: 15px !important;
-        transition: all 0.3s ease !important;
+    div[data-testid="stTextInput"] input, div[data-testid="stTextArea"] textarea {
+        background-color: #F8FAFC !important; border: 1.5px solid #E2E8F0 !important;
+        border-radius: 10px !important; padding: 11px 14px !important;
+        font-size: 14px !important; transition: all 0.2s ease !important;
     }
-    div[data-testid="stTextInput"] input:focus,
-    div[data-testid="stTextArea"] textarea:focus {
-        border-color: #4F46E5 !important;
-        box-shadow: 0 0 0 4px rgba(79,70,229,0.12) !important;
+    div[data-testid="stTextInput"] input:focus, div[data-testid="stTextArea"] textarea:focus {
+        border-color: #38BDF8 !important; background-color: #FFFFFF !important;
+        box-shadow: 0 0 0 3px rgba(56,189,248,0.12) !important;
     }
     button[kind="formSubmit"] {
-        background: linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%) !important;
-        color: white !important;
-        border: none !important;
-        border-radius: 14px !important;
-        padding: 14px 28px !important;
-        font-size: 16px !important;
-        font-weight: 700 !important;
-        width: 100% !important;
-        box-shadow: 0 8px 20px rgba(79,70,229,0.25) !important;
+        background: #0F172A !important; color: #38BDF8 !important; border: none !important;
+        border-radius: 10px !important; padding: 13px 24px !important;
+        font-size: 14px !important; font-weight: 700 !important;
+        font-family: 'Sora', sans-serif !important; width: 100% !important; letter-spacing: 0.3px !important;
     }
-    .clock-container {
-        background-color: #FFFbeb;
-        border: 1px solid #FEF3C7;
-        border-radius: 12px;
-        padding: 12px;
-        text-align: center;
-        margin-bottom: 20px;
-        color: #B45309;
-        font-weight: 600;
-        font-size: 14px;
+    .stButton > button {
+        border-radius: 10px !important; font-family: 'DM Sans', sans-serif !important;
+        font-weight: 600 !important; font-size: 13px !important;
+        border: 1.5px solid #E2E8F0 !important; background: #FFFFFF !important;
+        color: #0F172A !important; transition: all 0.15s !important;
     }
-    .kelas-badge {
-        background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
-        border: 1px solid #C7D2FE;
-        border-radius: 12px;
-        padding: 10px 16px;
-        margin-bottom: 8px;
-        font-size: 14px;
-        color: #3730A3;
-        font-weight: 600;
-    }
+    .stButton > button:hover { border-color: #38BDF8 !important; color: #0369A1 !important; }
+
+    /* HISTORI */
     .histori-container {
-        background-color: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 10px;
+        background: #FFFFFF; border: 1.5px solid #E2E8F0; border-left: 4px solid #0F172A;
+        border-radius: 12px; padding: 14px 18px; margin-bottom: 8px;
+    }
+
+    /* SECTION LABEL */
+    .sec-label {
+        font-family: 'Sora', sans-serif !important; font-size: 11px; font-weight: 700;
+        color: #94A3B8; text-transform: uppercase; letter-spacing: 1.4px;
+        margin: 22px 0 10px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;
     }
     </style>
 """, unsafe_allow_html=True)
+
 
 # ============================================================
 # KONEKSI GOOGLE SHEETS
@@ -354,10 +362,16 @@ def ke_halaman(nama):
 # ============================================================
 # HEADER (tampil di semua halaman)
 # ============================================================
-st.markdown("""
-    <div class="header-banner">
-        <h1>PRESENSI AKADEMIK BISNIS DIGITAL</h1>
-        <p>Ver Beta 0.95</p>
+st.markdown(f"""
+    <div class="top-bar">
+        <div style="display:flex; align-items:center;">
+            <div class="top-bar-logo">BD</div>
+            <div>
+                <span class="top-bar-title">PRESENSI BISNIS DIGITAL</span>
+                <span class="top-bar-sub">Sistem Kehadiran Akademik — Ver 1.0</span>
+            </div>
+        </div>
+        <div class="top-bar-date">{waktu_sekarang.strftime('%d %b %Y')}</div>
     </div>
 """, unsafe_allow_html=True)
 
@@ -369,47 +383,42 @@ if st.session_state['halaman'] == 'landing':
     semua_kelas_aktif = baca_semua_kelas_aktif()
 
     if semua_kelas_aktif:
-        st.success(f"📍 **{len(semua_kelas_aktif)} Kelas Aktif Saat Ini:**")
+        st.markdown(f"<div class='sec-label'>Kelas Aktif Saat Ini — {len(semua_kelas_aktif)} Sesi</div>", unsafe_allow_html=True)
         for k in semua_kelas_aktif:
             nama_makul = k['makul'].rsplit(' (', 1)[0]
             nama_dosen = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
             st.markdown(
-                f"<div class='kelas-badge'>📚 {nama_makul} &nbsp;—&nbsp; {nama_dosen} &nbsp;|&nbsp; Pertemuan {k['pertemuan']}</div>",
+                f"<div class='kelas-badge'>{nama_makul}"
+                f"<br><small>{nama_dosen} &nbsp;·&nbsp; Semester {k['semester']} &nbsp;·&nbsp; Pertemuan {k['pertemuan']}</small></div>",
                 unsafe_allow_html=True
             )
     else:
-        st.warning("⚠️ Belum ada kelas yang dibuka oleh Dosen.")
+        st.markdown("<div style='background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:12px;padding:12px 18px;margin-bottom:16px;font-size:14px;color:#9A3412;font-weight:500;'>Belum ada kelas yang dibuka oleh Dosen saat ini.</div>", unsafe_allow_html=True)
 
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.markdown("<h3 style='text-align:center; color:#4F46E5;'>Pilih Role </h3>", unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<div class='sec-label'>Masuk Sebagai</div>", unsafe_allow_html=True)
 
     col_mhs, col_dos = st.columns(2)
     with col_mhs:
         st.markdown("""
-            <div style='background:white; border-radius:20px; padding:30px 20px;
-                        text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.06);
-                        border: 1.5px solid #E2E8F0;'>
-                <div style='font-size:48px;'>🧑‍🎓</div>
-                <div style='font-weight:700; font-size:18px; margin-top:10px; color:#1E293B;'>Mahasiswa</div>
-                <div style='font-size:13px; color:#64748B; margin-top:6px;'>Isi presensi kehadiran</div>
+            <div class='role-card'>
+                <div class='role-card-label'>Mahasiswa</div>
+                <div class='role-card-desc'>Isi form presensi<br>kehadiran kuliah</div>
+                <div class='role-divider'></div>
             </div>
         """, unsafe_allow_html=True)
-        st.markdown("<div style='margin-top:12px'></div>", unsafe_allow_html=True)
-        if st.button("Masuk sebagai Mahasiswa", use_container_width=True, key="btn_mhs"):
+        st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
+        if st.button("Masuk →", use_container_width=True, key="btn_mhs"):
             ke_halaman('mahasiswa')
     with col_dos:
         st.markdown("""
-            <div style='background:white; border-radius:20px; padding:30px 20px;
-                        text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.06);
-                        border: 1.5px solid #E2E8F0;'>
-                <div style='font-size:48px;'>👨‍🏫</div>
-                <div style='font-weight:700; font-size:18px; margin-top:10px; color:#1E293B;'>Dosen</div>
-                <div style='font-size:13px; color:#64748B; margin-top:6px;'>Kelola kelas & presensi</div>
+            <div class='role-card'>
+                <div class='role-card-label'>Dosen</div>
+                <div class='role-card-desc'>Kelola kelas aktif<br>& rekap presensi</div>
+                <div class='role-divider'></div>
             </div>
         """, unsafe_allow_html=True)
-        st.markdown("<div style='margin-top:12px'></div>", unsafe_allow_html=True)
-        if st.button("Masuk sebagai Dosen", use_container_width=True, key="btn_dos"):
+        st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
+        if st.button("Masuk →", use_container_width=True, key="btn_dos"):
             ke_halaman('dosen')
 
 # ============================================================
@@ -512,7 +521,7 @@ elif st.session_state['halaman'] == 'dosen':
         if st.button("← Kembali", key="back_dos"):
             ke_halaman('landing')
 
-        st.markdown("<h3 style='color:#4F46E5; text-align:center;'>Login Dosen</h3>", unsafe_allow_html=True)
+        st.markdown("<div class='sec-label' style='text-align:center;font-size:14px;letter-spacing:0;color:#0F172A;'>Login Dosen</div>", unsafe_allow_html=True)
         with st.form(key="form_login_dosen"):
             password_input = st.text_input("Password", type="password", placeholder="Masukkan password dosen...")
             tombol_login   = st.form_submit_button("Login")
@@ -535,7 +544,7 @@ elif st.session_state['halaman'] == 'dosen':
                 ke_halaman('landing')
 
         # --- 1. ATUR KELAS ---
-        st.markdown("<h4 style='color:#4F46E5;'>1. Atur & Aktifkan Kelas</h4>", unsafe_allow_html=True)
+        st.markdown("<div class='sec-label'>1. Atur & Aktifkan Kelas</div>", unsafe_allow_html=True)
 
         pilihan_dosen = st.selectbox(
             "Nama Dosen Pengampu",
@@ -597,7 +606,7 @@ elif st.session_state['halaman'] == 'dosen':
 
         # --- 2. KELOLA SEMUA KELAS AKTIF ---
         st.markdown("<hr>", unsafe_allow_html=True)
-        st.markdown("<h4 style='color:#4F46E5;'>📋 Kelola Semua Kelas Aktif</h4>", unsafe_allow_html=True)
+        st.markdown("<div class='sec-label'>📋 Kelola Semua Kelas Aktif</div>", unsafe_allow_html=True)
 
         kelas_aktif_sekarang = baca_semua_kelas_aktif()
         if kelas_aktif_sekarang:
@@ -625,7 +634,7 @@ elif st.session_state['halaman'] == 'dosen':
 
         # --- 3. QR CODE ---
         st.markdown("<hr>", unsafe_allow_html=True)
-        st.markdown("<h4 style='color:#4F46E5;'>2. Generate QR Code Absensi</h4>", unsafe_allow_html=True)
+        st.markdown("<div class='sec-label'>2. Generate QR Code Absensi</div>", unsafe_allow_html=True)
         url_aplikasi = st.text_input("URL Aplikasi", placeholder="https://nama-app.streamlit.app")
 
         if st.button("Generate QR Code"):
@@ -645,7 +654,7 @@ elif st.session_state['halaman'] == 'dosen':
 
         # --- 4. ARSIP, HISTORI & DOWNLOAD REKAP (FITUR UTAMA BARU) ---
         st.markdown("<hr>", unsafe_allow_html=True)
-        st.markdown("<h4 style='color:#4F46E5;'>3. Panel Rekapitulasi & Histori Presensi</h4>", unsafe_allow_html=True)
+        st.markdown("<div class='sec-label'>3. Panel Rekapitulasi & Histori Presensi</div>", unsafe_allow_html=True)
 
         makul_arsip_opsi = DATA_JADWAL[pilihan_dosen]
         pilih_makul_arsip = st.selectbox("Pilih Mata Kuliah untuk Mengelola Arsip:", options=makul_arsip_opsi)
