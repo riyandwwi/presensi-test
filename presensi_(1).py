@@ -444,9 +444,9 @@ elif st.session_state['halaman'] == 'mahasiswa':
 
             col_nama, col_nim = st.columns(2)
             with col_nama:
-                nama = st.text_input("Nama Lengkap", placeholder="Sesuai SIAKAD")
+                nama = st.text_input("Nama Lengkap", placeholder="")
             with col_nim:
-                nim  = st.text_input("NIM", placeholder="Contoh: 220101001")
+                nim  = st.text_input("NIM", placeholder="Contoh: ")
 
             if semua_kelas_aktif:
                 def label_kelas(k):
