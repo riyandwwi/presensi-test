@@ -35,101 +35,93 @@ st.set_page_config(
 # ============================================================
 # CSS
 # ============================================================
-# ============================================================
-# CSS
-# ============================================================
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap');
-    html, body, [class*="css"], p, span, div, label { font-family: 'DM Sans', sans-serif !important; color: #0F172A; }
-    h1, h2, h3, h4, h5 { font-family: 'Sora', sans-serif !important; }
-    .stApp { background-color: #F1F5F9; }
-    header {visibility: hidden;} footer {visibility: hidden;} #MainMenu {visibility: hidden;}
-
-    /* TOP BAR */
-    .top-bar {
-        background: #0F172A; border-radius: 16px; padding: 18px 24px;
-        display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    html, body, [class*=\"css\"] {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        color: #2D3748;
     }
-    .top-bar-logo {
-        display: inline-flex; align-items: center; justify-content: center;
-        width: 38px; height: 38px; background: #38BDF8; border-radius: 9px;
-        font-family: 'Sora', sans-serif !important; font-weight: 800; font-size: 14px;
-        color: #0F172A; margin-right: 12px; vertical-align: middle;
+    .stApp {
+        background: linear-gradient(135deg, #F0F4F8 0%, #E2E8F0 100%);
     }
-    .top-bar-title { font-family: 'Sora', sans-serif !important; font-weight: 700; font-size: 15px; color: #F8FAFC; display: inline; }
-    .top-bar-sub { font-size: 11px; color: #64748B; display: block; margin-top: 1px; }
-    .top-bar-date { font-size: 12px; color: #64748B; font-weight: 500; }
-
-    /* ROLE CARDS */
-    .role-card {
-        background: #FFFFFF; border: 1.5px solid #E2E8F0; border-radius: 18px;
-        padding: 32px 20px 24px; text-align: center;
+    header {visibility: hidden;}
+    footer {visibility: hidden;}
+    #MainMenu {visibility: hidden;}
+    .header-banner {
+        background: linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%);
+        padding: 30px;
+        border-radius: 20px;
+        color: white;
+        text-align: center;
+        margin-bottom: 25px;
+        box-shadow: 0 10px 25px rgba(79, 70, 229, 0.15);
     }
-    .role-card-label { font-family: 'Sora', sans-serif !important; font-weight: 700; font-size: 19px; color: #0F172A; margin-bottom: 6px; }
-    .role-card-desc { font-size: 13px; color: #64748B; line-height: 1.5; }
-    .role-divider { width: 36px; height: 3px; background: #38BDF8; border-radius: 99px; margin: 14px auto 0; }
-
-    /* KELAS BADGE */
-    .kelas-badge {
-        background: #FFFFFF; border: 1.5px solid #E2E8F0; border-left: 4px solid #38BDF8;
-        border-radius: 12px; padding: 11px 16px; margin-bottom: 8px;
-        font-size: 14px; color: #0F172A; font-weight: 600;
-    }
-    .kelas-badge small { color: #64748B; font-weight: 400; }
-
-    /* CLOCK */
-    .clock-container {
-        background: #0F172A; border-radius: 12px; padding: 14px 18px;
-        text-align: center; margin-bottom: 20px; color: #38BDF8;
-        font-family: 'Sora', sans-serif !important; font-weight: 700; font-size: 15px; letter-spacing: 0.3px;
-    }
-    .clock-container small { color: #475569; font-weight: 400; font-size: 11px; }
-
-    /* FORM */
+    .header-banner h1 { color: white !important; font-weight: 800; font-size: 32px; margin-bottom: 5px; }
+    .header-banner p  { color: #E0E7FF !important; font-size: 16px; opacity: 0.9; }
     div[data-testid="stForm"] {
-        background: #FFFFFF !important; border: 1.5px solid #E2E8F0 !important;
-        border-radius: 18px !important; padding: 30px !important;
-        box-shadow: 0 2px 16px rgba(0,0,0,0.04) !important;
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.5);
+        border-radius: 24px !important;
+        padding: 40px !important;
+        box-shadow: 0 20px 40px rgba(0,0,0,0.04) !important;
     }
-    div[data-testid="stTextInput"] input, div[data-testid="stTextArea"] textarea {
-        background-color: #F8FAFC !important; border: 1.5px solid #E2E8F0 !important;
-        border-radius: 10px !important; padding: 11px 14px !important;
-        font-size: 14px !important; transition: all 0.2s ease !important;
+    div[data-testid="stTextInput"] input,
+    div[data-testid="stTextArea"] textarea {
+        background-color: #FFFFFF !important;
+        border: 1.5px solid #E2E8F0 !important;
+        border-radius: 12px !important;
+        padding: 12px 16px !important;
+        font-size: 15px !important;
+        transition: all 0.3s ease !important;
     }
-    div[data-testid="stTextInput"] input:focus, div[data-testid="stTextArea"] textarea:focus {
-        border-color: #38BDF8 !important; background-color: #FFFFFF !important;
-        box-shadow: 0 0 0 3px rgba(56,189,248,0.12) !important;
+    div[data-testid="stTextInput"] input:focus,
+    div[data-testid="stTextArea"] textarea:focus {
+        border-color: #4F46E5 !important;
+        box-shadow: 0 0 0 4px rgba(79,70,229,0.12) !important;
     }
     button[kind="formSubmit"] {
-        background: #0F172A !important; color: #38BDF8 !important; border: none !important;
-        border-radius: 10px !important; padding: 13px 24px !important;
-        font-size: 14px !important; font-weight: 700 !important;
-        font-family: 'Sora', sans-serif !important; width: 100% !important; letter-spacing: 0.3px !important;
+        background: linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%) !important;
+        color: white !important;
+        border: none !important;
+        border-radius: 14px !important;
+        padding: 14px 28px !important;
+        font-size: 16px !important;
+        font-weight: 700 !important;
+        width: 100% !important;
+        box-shadow: 0 8px 20px rgba(79,70,229,0.25) !important;
     }
-    .stButton > button {
-        border-radius: 10px !important; font-family: 'DM Sans', sans-serif !important;
-        font-weight: 600 !important; font-size: 13px !important;
-        border: 1.5px solid #E2E8F0 !important; background: #FFFFFF !important;
-        color: #0F172A !important; transition: all 0.15s !important;
+    .clock-container {
+        background-color: #FFFbeb;
+        border: 1px solid #FEF3C7;
+        border-radius: 12px;
+        padding: 12px;
+        text-align: center;
+        margin-bottom: 20px;
+        color: #B45309;
+        font-weight: 600;
+        font-size: 14px;
     }
-    .stButton > button:hover { border-color: #38BDF8 !important; color: #0369A1 !important; }
-
-    /* HISTORI */
+    .kelas-badge {
+        background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%);
+        border: 1px solid #C7D2FE;
+        border-radius: 12px;
+        padding: 10px 16px;
+        margin-bottom: 8px;
+        font-size: 14px;
+        color: #3730A3;
+        font-weight: 600;
+    }
     .histori-container {
-        background: #FFFFFF; border: 1.5px solid #E2E8F0; border-left: 4px solid #0F172A;
-        border-radius: 12px; padding: 14px 18px; margin-bottom: 8px;
-    }
-
-    /* SECTION LABEL */
-    .sec-label {
-        font-family: 'Sora', sans-serif !important; font-size: 11px; font-weight: 700;
-        color: #94A3B8; text-transform: uppercase; letter-spacing: 1.4px;
-        margin: 22px 0 10px; padding-bottom: 8px; border-bottom: 1px solid #E2E8F0;
+        background-color: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 10px;
     }
     </style>
 """, unsafe_allow_html=True)
-
 
 # ============================================================
 # KONEKSI GOOGLE SHEETS
@@ -362,16 +354,10 @@ def ke_halaman(nama):
 # ============================================================
 # HEADER (tampil di semua halaman)
 # ============================================================
-st.markdown(f"""
-    <div class="top-bar">
-        <div style="display:flex; align-items:center;">
-            <div class="top-bar-logo">BD</div>
-            <div>
-                <span class="top-bar-title">PRESENSI BISNIS DIGITAL</span>
-                <span class="top-bar-sub">Sistem Kehadiran Akademik — Ver 1.0</span>
-            </div>
-        </div>
-        <div class="top-bar-date">{waktu_sekarang.strftime('%d %b %Y')}</div>
+st.markdown("""
+    <div class="header-banner">
+        <h1>PRESENSI AKADEMIK BISNIS DIGITAL</h1>
+        <p>Ver Beta 0.95</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -383,42 +369,47 @@ if st.session_state['halaman'] == 'landing':
     semua_kelas_aktif = baca_semua_kelas_aktif()
 
     if semua_kelas_aktif:
-        st.markdown(f"<div class='sec-label'>Kelas Aktif Saat Ini — {len(semua_kelas_aktif)} Sesi</div>", unsafe_allow_html=True)
+        st.success(f"📍 **{len(semua_kelas_aktif)} Kelas Aktif Saat Ini:**")
         for k in semua_kelas_aktif:
             nama_makul = k['makul'].rsplit(' (', 1)[0]
             nama_dosen = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
             st.markdown(
-                f"<div class='kelas-badge'>{nama_makul}"
-                f"<br><small>{nama_dosen} &nbsp;·&nbsp; Semester {k['semester']} &nbsp;·&nbsp; Pertemuan {k['pertemuan']}</small></div>",
+                f"<div class='kelas-badge'>📚 {nama_makul} &nbsp;—&nbsp; {nama_dosen} &nbsp;|&nbsp; Pertemuan {k['pertemuan']}</div>",
                 unsafe_allow_html=True
             )
     else:
-        st.markdown("<div style='background:#FFF7ED;border:1.5px solid #FED7AA;border-radius:12px;padding:12px 18px;margin-bottom:16px;font-size:14px;color:#9A3412;font-weight:500;'>Belum ada kelas yang dibuka oleh Dosen saat ini.</div>", unsafe_allow_html=True)
+        st.warning("⚠️ Belum ada kelas yang dibuka oleh Dosen.")
 
-    st.markdown("<div class='sec-label'>Masuk Sebagai</div>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align:center; color:#4F46E5;'>Pilih Role </h3>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
 
     col_mhs, col_dos = st.columns(2)
     with col_mhs:
         st.markdown("""
-            <div class='role-card'>
-                <div class='role-card-label'>Mahasiswa</div>
-                <div class='role-card-desc'>Isi form presensi<br>kehadiran kuliah</div>
-                <div class='role-divider'></div>
+            <div style='background:white; border-radius:20px; padding:30px 20px;
+                        text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.06);
+                        border: 1.5px solid #E2E8F0;'>
+                <div style='font-size:48px;'>🧑‍🎓</div>
+                <div style='font-weight:700; font-size:18px; margin-top:10px; color:#1E293B;'>Mahasiswa</div>
+                <div style='font-size:13px; color:#64748B; margin-top:6px;'>Isi presensi kehadiran</div>
             </div>
         """, unsafe_allow_html=True)
-        st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
-        if st.button("Masuk →", use_container_width=True, key="btn_mhs"):
+        st.markdown("<div style='margin-top:12px'></div>", unsafe_allow_html=True)
+        if st.button("Masuk sebagai Mahasiswa", use_container_width=True, key="btn_mhs"):
             ke_halaman('mahasiswa')
     with col_dos:
         st.markdown("""
-            <div class='role-card'>
-                <div class='role-card-label'>Dosen</div>
-                <div class='role-card-desc'>Kelola kelas aktif<br>& rekap presensi</div>
-                <div class='role-divider'></div>
+            <div style='background:white; border-radius:20px; padding:30px 20px;
+                        text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.06);
+                        border: 1.5px solid #E2E8F0;'>
+                <div style='font-size:48px;'>👨‍🏫</div>
+                <div style='font-weight:700; font-size:18px; margin-top:10px; color:#1E293B;'>Dosen</div>
+                <div style='font-size:13px; color:#64748B; margin-top:6px;'>Kelola kelas & presensi</div>
             </div>
         """, unsafe_allow_html=True)
-        st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
-        if st.button("Masuk →", use_container_width=True, key="btn_dos"):
+        st.markdown("<div style='margin-top:12px'></div>", unsafe_allow_html=True)
+        if st.button("Masuk sebagai Dosen", use_container_width=True, key="btn_dos"):
             ke_halaman('dosen')
 
 # ============================================================
@@ -513,7 +504,7 @@ elif st.session_state['halaman'] == 'mahasiswa':
                 st.error("Gagal mengirim! Semua kolom wajib diisi.")
 
 # ============================================================
-# HALAMAN DOSEN — login + dashboard sidebar
+# HALAMAN DOSEN — login + panel kelola kelas
 # ============================================================
 elif st.session_state['halaman'] == 'dosen':
 
@@ -521,354 +512,285 @@ elif st.session_state['halaman'] == 'dosen':
         if st.button("← Kembali", key="back_dos"):
             ke_halaman('landing')
 
-        st.markdown("<br>", unsafe_allow_html=True)
-        col_c = st.columns([1,2,1])[1]
-        with col_c:
-            st.markdown("""
-                <div style='background:#FFFFFF;border:1.5px solid #E2E8F0;border-radius:18px;padding:32px 28px;'>
-                    <div style='font-family:Sora,sans-serif;font-weight:700;font-size:20px;color:#0F172A;margin-bottom:4px;'>Login Dosen</div>
-                    <div style='font-size:13px;color:#64748B;margin-bottom:24px;'>Masukkan password untuk mengakses panel dosen</div>
-                </div>
-            """, unsafe_allow_html=True)
-            with st.form(key="form_login_dosen"):
-                password_input = st.text_input("Password", type="password", placeholder="••••••••••")
-                tombol_login   = st.form_submit_button("Masuk ke Dashboard →")
-            if tombol_login:
-                PASSWORD_DOSEN = st.secrets.get("password_dosen", "dosen123")
-                if password_input == PASSWORD_DOSEN:
-                    st.session_state['dosen_login'] = True
-                    st.session_state['menu_dosen'] = 'Kelas'
-                    st.rerun()
-                else:
-                    st.error("Password salah!")
+        st.markdown("<h3 style='color:#4F46E5; text-align:center;'>Login Dosen</h3>", unsafe_allow_html=True)
+        with st.form(key="form_login_dosen"):
+            password_input = st.text_input("Password", type="password", placeholder="Masukkan password dosen...")
+            tombol_login   = st.form_submit_button("Login")
+
+        if tombol_login:
+            PASSWORD_DOSEN = st.secrets.get("password_dosen", "dosen123")
+            if password_input == PASSWORD_DOSEN:
+                st.session_state['dosen_login'] = True
+                st.rerun()
+            else:
+                st.error("Password salah!")
 
     else:
-        # Init menu state
-        if 'menu_dosen' not in st.session_state:
-            st.session_state['menu_dosen'] = 'Kelas'
-
-        # Pilihan dosen disimpan di session agar persist antar menu
-        if 'pilihan_dosen' not in st.session_state:
-            st.session_state['pilihan_dosen'] = list(DATA_JADWAL.keys())[0]
-
-        MENU_ITEMS = [
-            ("Kelas",   "Atur & Aktifkan"),
-            ("Kelola",  "Semua Kelas Aktif"),
-            ("QR Code", "Generate QR"),
-            ("Rekap",   "Data & Histori"),
-        ]
-
-        # ── CSS SIDEBAR ──────────────────────────────────────────
-        st.markdown("""
-            <style>
-            .sidebar-wrap {
-                background: #0F172A; border-radius: 16px;
-                padding: 20px 14px; min-height: 480px;
-            }
-            .sidebar-profile {
-                text-align: center; padding-bottom: 18px;
-                border-bottom: 1px solid #1E293B; margin-bottom: 16px;
-            }
-            .sidebar-avatar {
-                width: 44px; height: 44px; background: #38BDF8;
-                border-radius: 50%; display: flex; align-items: center;
-                justify-content: center; margin: 0 auto 8px;
-                font-family: 'Sora',sans-serif; font-weight: 800;
-                font-size: 16px; color: #0F172A;
-            }
-            .sidebar-name { font-size: 12px; color: #F1F5F9; font-weight: 600; }
-            .sidebar-role { font-size: 11px; color: #475569; margin-top: 2px; }
-            .nav-item {
-                padding: 10px 14px; border-radius: 10px; margin-bottom: 4px;
-                cursor: pointer; display: flex; align-items: center; gap: 10px;
-            }
-            .nav-item-label { font-size: 13px; font-weight: 600; color: #94A3B8; }
-            .nav-item-sub { font-size: 10px; color: #475569; }
-            .nav-item.active { background: #1E293B; }
-            .nav-item.active .nav-item-label { color: #38BDF8; }
-            .dash-content {
-                background: #FFFFFF; border: 1.5px solid #E2E8F0;
-                border-radius: 16px; padding: 28px 24px; min-height: 480px;
-            }
-            .dash-title {
-                font-family: 'Sora',sans-serif !important;
-                font-size: 20px; font-weight: 700; color: #0F172A;
-                margin-bottom: 4px;
-            }
-            .dash-sub { font-size: 13px; color: #64748B; margin-bottom: 24px; }
-            </style>
-        """, unsafe_allow_html=True)
-
-        col_side, col_main = st.columns([1, 3])
-
-        # ── SIDEBAR ───────────────────────────────────────────────
-        with col_side:
-            inisial = st.session_state['pilihan_dosen'][:2].upper()
-            st.markdown(f"""
-                <div class="sidebar-wrap">
-                    <div class="sidebar-profile">
-                        <div class="sidebar-avatar">{inisial}</div>
-                        <div class="sidebar-name">Panel Dosen</div>
-                        <div class="sidebar-role">Bisnis Digital</div>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-
-            st.markdown("<div style='margin-top:-8px'></div>", unsafe_allow_html=True)
-
-            for label, sub in MENU_ITEMS:
-                is_active = st.session_state['menu_dosen'] == label
-                icon_map = {"Kelas": "◈", "Kelola": "◉", "QR Code": "◎", "Rekap": "≡"}
-                bg = "background:#1E293B;border-radius:10px;" if is_active else ""
-                color = "#38BDF8" if is_active else "#94A3B8"
-                subcolor = "#64748B" if is_active else "#334155"
-                st.markdown(f"""
-                    <div style='padding:10px 14px;margin-bottom:3px;{bg}'>
-                        <span style='font-size:13px;font-weight:600;color:{color};'>{icon_map[label]} {label}</span><br>
-                        <span style='font-size:10px;color:{subcolor};'>{sub}</span>
-                    </div>
-                """, unsafe_allow_html=True)
-                if st.button(label, key=f"nav_{label}", use_container_width=True):
-                    st.session_state['menu_dosen'] = label
-                    st.rerun()
-
-            st.markdown("<div style='margin-top:12px'></div>", unsafe_allow_html=True)
-            if st.button("Logout", key="logout_btn", use_container_width=True):
+        col_title, col_logout = st.columns([4, 1])
+        with col_title:
+            st.markdown("#### ✅ Panel Dosen")
+        with col_logout:
+            if st.button("Logout"):
                 st.session_state['dosen_login'] = False
                 ke_halaman('landing')
 
-        # ── KONTEN UTAMA ──────────────────────────────────────────
-        with col_main:
-            menu = st.session_state['menu_dosen']
+        # --- 1. ATUR KELAS ---
+        st.markdown("<h4 style='color:#4F46E5;'>1. Atur & Aktifkan Kelas</h4>", unsafe_allow_html=True)
 
-            # Pilih dosen (selalu tersedia, disimpan di session)
-            pilihan_dosen = st.selectbox(
-                "Dosen",
-                options=list(DATA_JADWAL.keys()),
-                index=list(DATA_JADWAL.keys()).index(st.session_state['pilihan_dosen']),
-                key="select_dosen_global"
+        pilihan_dosen = st.selectbox(
+            "Nama Dosen Pengampu",
+            options=list(DATA_JADWAL.keys()),
+        )
+        daftar_makul  = DATA_JADWAL[pilihan_dosen]
+        pilihan_makul = st.selectbox("Nama Mata Kuliah", options=daftar_makul)
+
+        input_makul_gabungan = f"{pilihan_makul} ({pilihan_dosen})"
+        dosen_key            = pilihan_dosen
+
+        status_dosen = baca_status_kelas_dosen(dosen_key)
+        if status_dosen["aktif"]:
+            nama_makul_aktif = status_dosen['makul'].rsplit(' (', 1)[0]
+            st.info(f"🟢 Kelas aktif: **{nama_makul_aktif}** | Sem {status_dosen['semester']} | Pertemuan {status_dosen['pertemuan']}")
+        else:
+            st.caption("🔴 Dosen ini belum membuka kelas saat ini.")
+
+        col1, col2 = st.columns(2)
+        with col1:
+            input_semester = st.text_input(
+                "Semester",
+                value=status_dosen["semester"] if status_dosen["semester"] != "-" else "",
+                placeholder="Contoh: 4"
             )
-            st.session_state['pilihan_dosen'] = pilihan_dosen
-            dosen_key     = pilihan_dosen
-            status_dosen  = baca_status_kelas_dosen(dosen_key)
+        with col2:
+            input_pertemuan = st.text_input(
+                "Pertemuan Ke-",
+                value=status_dosen["pertemuan"] if status_dosen["pertemuan"] != "-" else "",
+                placeholder="Contoh: 3"
+            )
 
-            # ── MENU: KELAS ───────────────────────────────────────
-            if menu == 'Kelas':
-                st.markdown("<div class='dash-title'>Atur Kelas</div>", unsafe_allow_html=True)
-                st.markdown("<div class='dash-sub'>Pilih mata kuliah, set semester & pertemuan, lalu aktifkan.</div>", unsafe_allow_html=True)
-
-                if status_dosen["aktif"]:
-                    nm_aktif = status_dosen['makul'].rsplit(' (', 1)[0]
-                    st.markdown(f"""
-                        <div style='background:#F0FDF4;border:1.5px solid #BBF7D0;border-left:4px solid #16A34A;
-                                    border-radius:12px;padding:12px 16px;margin-bottom:16px;'>
-                            <span style='font-size:13px;font-weight:700;color:#166534;'>Kelas Aktif</span><br>
-                            <span style='font-size:14px;color:#14532D;'>{nm_aktif}</span>
-                            <span style='font-size:12px;color:#4ADE80;'> · Sem {status_dosen['semester']} · Pertemuan {status_dosen['pertemuan']}</span>
-                        </div>
-                    """, unsafe_allow_html=True)
+        col_buka, col_tutup = st.columns(2)
+        with col_buka:
+            if st.button("✅ Aktifkan Kelas", use_container_width=True):
+                if input_semester and input_pertemuan:
+                    try:
+                        tulis_status_kelas(
+                            input_makul_gabungan, input_semester, input_pertemuan,
+                            dosen_key=dosen_key, aktif=True
+                        )
+                        st.success("Kelas berhasil diaktifkan!")
+                        st.rerun()
+                    except Exception as e:
+                        st.error(f"Gagal menyimpan: {e}")
                 else:
-                    st.markdown("<div style='background:#FFF7ED;border:1.5px solid #FED7AA;border-left:4px solid #F97316;border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#9A3412;font-weight:500;'>Belum ada kelas aktif untuk dosen ini.</div>", unsafe_allow_html=True)
+                    st.error("Isi semester dan pertemuan terlebih dahulu!")
+        with col_tutup:
+            if st.button("⛔ Tutup Kelas Saya", use_container_width=True):
+                try:
+                    hasil = tutup_kelas(dosen_key=dosen_key)
+                    if hasil:
+                        st.success("Kelas berhasil ditutup.")
+                    else:
+                        st.warning("Tidak ada kelas aktif untuk dosen ini.")
+                    st.rerun()
+                except Exception as e:
+                    st.error(f"Gagal menutup: {e}")
 
-                daftar_makul  = DATA_JADWAL[pilihan_dosen]
-                pilihan_makul = st.selectbox("Mata Kuliah", options=daftar_makul)
-                input_makul_gabungan = f"{pilihan_makul} ({pilihan_dosen})"
+        # --- 2. KELOLA SEMUA KELAS AKTIF ---
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#4F46E5;'>📋 Kelola Semua Kelas Aktif</h4>", unsafe_allow_html=True)
 
-                col1, col2 = st.columns(2)
-                with col1:
-                    input_semester = st.text_input("Semester", value=status_dosen["semester"] if status_dosen["semester"] != "-" else "", placeholder="Contoh: 4")
-                with col2:
-                    input_pertemuan = st.text_input("Pertemuan Ke-", value=status_dosen["pertemuan"] if status_dosen["pertemuan"] != "-" else "", placeholder="Contoh: 3")
-
-                col_buka, col_tutup = st.columns(2)
-                with col_buka:
-                    if st.button("Aktifkan Kelas", use_container_width=True, key="btn_aktifkan"):
-                        if input_semester and input_pertemuan:
-                            try:
-                                tulis_status_kelas(input_makul_gabungan, input_semester, input_pertemuan, dosen_key=dosen_key, aktif=True)
-                                st.success("Kelas berhasil diaktifkan!")
-                                st.rerun()
-                            except Exception as e:
-                                st.error(f"Gagal: {e}")
-                        else:
-                            st.error("Isi semester dan pertemuan!")
-                with col_tutup:
-                    if st.button("Tutup Kelas Saya", use_container_width=True, key="btn_tutup"):
+        kelas_aktif_sekarang = baca_semua_kelas_aktif()
+        if kelas_aktif_sekarang:
+            for idx_k, k in enumerate(kelas_aktif_sekarang):
+                nm = k['makul'].rsplit(' (', 1)[0]
+                nd = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
+                col_info, col_btn = st.columns([5, 2])
+                with col_info:
+                    st.markdown(
+                        f"<div class='kelas-badge'>📚 {nm}<br>"
+                        f"<small style='font-weight:400'>{nd} &nbsp;|&nbsp; Sem {k['semester']} &nbsp;|&nbsp; Pertemuan {k['pertemuan']}</small></div>",
+                        unsafe_allow_html=True
+                    )
+                with col_btn:
+                    st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
+                    if st.button("⛔ Tutup", key=f"tutup_kelas_{idx_k}", use_container_width=True):
                         try:
-                            hasil = tutup_kelas(dosen_key=dosen_key)
-                            st.success("Kelas ditutup.") if hasil else st.warning("Tidak ada kelas aktif.")
+                            tutup_kelas_by_makul(k['makul'])
+                            st.success(f"{nm} ditutup.")
                             st.rerun()
                         except Exception as e:
                             st.error(f"Gagal: {e}")
+        else:
+            st.caption("Belum ada kelas aktif saat ini.")
 
-            # ── MENU: KELOLA ──────────────────────────────────────
-            elif menu == 'Kelola':
-                st.markdown("<div class='dash-title'>Kelola Kelas Aktif</div>", unsafe_allow_html=True)
-                st.markdown("<div class='dash-sub'>Semua kelas yang sedang dibuka saat ini. Tutup jika sesi selesai.</div>", unsafe_allow_html=True)
+        # --- 3. QR CODE ---
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#4F46E5;'>2. Generate QR Code Absensi</h4>", unsafe_allow_html=True)
+        url_aplikasi = st.text_input("URL Aplikasi", placeholder="https://nama-app.streamlit.app")
 
-                kelas_aktif_sekarang = baca_semua_kelas_aktif()
-                if kelas_aktif_sekarang:
-                    for idx_k, k in enumerate(kelas_aktif_sekarang):
-                        nm = k['makul'].rsplit(' (', 1)[0]
-                        nd = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
-                        col_info, col_btn = st.columns([5, 2])
-                        with col_info:
-                            st.markdown(
-                                f"<div class='kelas-badge'>{nm}"
-                                f"<br><small>{nd} · Sem {k['semester']} · Pertemuan {k['pertemuan']}</small></div>",
-                                unsafe_allow_html=True
-                            )
-                        with col_btn:
-                            st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
-                            if st.button("Tutup", key=f"tutup_k_{idx_k}", use_container_width=True):
-                                try:
-                                    tutup_kelas_by_makul(k['makul'])
-                                    st.success(f"{nm} ditutup.")
-                                    st.rerun()
-                                except Exception as e:
-                                    st.error(f"Gagal: {e}")
+        if st.button("Generate QR Code"):
+            if url_aplikasi:
+                qr_image = generate_qr(url_aplikasi)
+                st.image(qr_image,
+                         caption=f"QR Presensi — {pilihan_makul} Pertemuan {input_pertemuan}",
+                         width=260)
+                st.download_button(
+                    label="⬇️ Download QR Code",
+                    data=qr_image,
+                    file_name=f"qr_{pilihan_makul}_pertemuan{input_pertemuan}.png",
+                    mime="image/png"
+                )
+            else:
+                st.error("Masukkan URL aplikasi terlebih dahulu!")
+
+        # --- 4. ARSIP, HISTORI & DOWNLOAD REKAP (FITUR UTAMA BARU) ---
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("<h4 style='color:#4F46E5;'>3. Panel Rekapitulasi & Histori Presensi</h4>", unsafe_allow_html=True)
+
+        makul_arsip_opsi = DATA_JADWAL[pilihan_dosen]
+        pilih_makul_arsip = st.selectbox("Pilih Mata Kuliah untuk Mengelola Arsip:", options=makul_arsip_opsi)
+        input_makul_arsip_gabungan = f"{pilih_makul_arsip} ({pilihan_dosen})"
+
+        # --- FITUR DOWNLOAD REKAP SEMUA PERTEMUAN (1-16) ---
+        st.markdown("##### 📥 Master Rekapitulasi Semester")
+        if st.button("📊 Ambil Data Semua Pertemuan (1-16)", use_container_width=True):
+            try:
+                sheet   = get_sheet()
+                nama_ws = input_makul_arsip_gabungan.replace("/", "-").replace(":", "-")[:50]
+                ws      = sheet.worksheet(nama_ws)
+                data    = ws.get_all_records()
+                
+                if data:
+                    df_all = pd.DataFrame(data)
+                    
+                    # Urutkan berdasarkan nomor pertemuan dahulu, lalu urutkan NIM agar rapi
+                    if 'Pertemuan Ke' in df_all.columns and 'NIM' in df_all.columns:
+                        df_all['Pertemuan Ke_Int'] = pd.to_numeric(df_all['Pertemuan Ke'], errors='coerce')
+                        df_all = df_all.sort_values(by=['Pertemuan Ke_Int', 'NIM']).drop(columns=['Pertemuan Ke_Int'])
+                    
+                    st.success(f"Berhasil mengagregasi total {len(df_all)} baris data kehadiran semester!")
+                    
+                    output_all = BytesIO()
+                    df_all.to_excel(output_all, index=False, engine='openpyxl')
+                    output_all.seek(0)
+                    
+                    st.download_button(
+                        label="⬇️ DOWNLOAD EXCEL REKAP SEMESTER (P1-P16)",
+                        data=output_all,
+                        file_name=f"REKAP_TOTAL_{pilih_makul_arsip}_1_sampai_16.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True
+                    )
                 else:
-                    st.markdown("<div style='text-align:center;padding:48px 0;color:#94A3B8;font-size:14px;'>Tidak ada kelas aktif saat ini.</div>", unsafe_allow_html=True)
+                    st.info("Belum ada rekam presensi yang terdaftar sama sekali untuk mata kuliah ini.")
+            except gspread.exceptions.WorksheetNotFound:
+                st.info("Database presensi kosong karena belum pernah ada mahasiswa yang mengisi di kelas ini.")
+            except Exception as e:
+                st.error(f"Gagal membuat rekap: {e}")
 
-            # ── MENU: QR CODE ─────────────────────────────────────
-            elif menu == 'QR Code':
-                st.markdown("<div class='dash-title'>Generate QR Code</div>", unsafe_allow_html=True)
-                st.markdown("<div class='dash-sub'>Buat QR untuk mahasiswa scan langsung ke form presensi.</div>", unsafe_allow_html=True)
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # --- FITUR ARSIP FILTER PER PERTEMUAN ---
+        st.markdown("##### 🔍 Filter Berdasarkan Sesi Pertemuan")
+        pilih_pertemuan_arsip = st.selectbox(
+            "Pilih Nomor Pertemuan:",
+            options=[str(i) for i in range(1, 17)],
+            index=0
+        )
+        
+        col_tampil, col_reload = st.columns([3, 1])
+        with col_tampil:
+            btn_tampil = st.button("Tampilkan Arsip Pertemuan", use_container_width=True)
+        with col_reload:
+            btn_reload = st.button("🔄 Reload Data", use_container_width=True)
 
-                daftar_makul_qr  = DATA_JADWAL[pilihan_dosen]
-                pilihan_makul_qr = st.selectbox("Mata Kuliah", options=daftar_makul_qr, key="qr_makul")
-                input_pertemuan_qr = st.text_input("Pertemuan Ke-", placeholder="Contoh: 3", key="qr_pertemuan")
-                url_aplikasi = st.text_input("URL Aplikasi", placeholder="https://nama-app.streamlit.app")
-
-                if st.button("Generate QR Code", use_container_width=True):
-                    if url_aplikasi:
-                        qr_image = generate_qr(url_aplikasi)
-                        col_img, col_dl = st.columns([1,1])
-                        with col_img:
-                            st.image(qr_image, width=220)
-                        with col_dl:
-                            st.markdown(f"<br><b>{pilihan_makul_qr}</b><br><small>Pertemuan {input_pertemuan_qr}</small>", unsafe_allow_html=True)
-                            st.download_button(
-                                label="Download QR",
-                                data=qr_image,
-                                file_name=f"qr_{pilihan_makul_qr}_P{input_pertemuan_qr}.png",
-                                mime="image/png",
-                                use_container_width=True
-                            )
+        if btn_tampil or btn_reload:
+            try:
+                sheet   = get_sheet()
+                nama_ws = input_makul_arsip_gabungan.replace("/", "-").replace(":", "-")[:50]
+                ws      = sheet.worksheet(nama_ws)
+                data    = ws.get_all_records()
+                
+                if data:
+                    df_all = pd.DataFrame(data)
+                    df_filtered = df_all[df_all['Pertemuan Ke'].astype(str) == str(pilih_pertemuan_arsip)]
+                    
+                    if not df_filtered.empty:
+                        if "Mata Kuliah" in df_filtered.columns:
+                            df_filtered = df_filtered.drop(columns=["Mata Kuliah"])
+                        
+                        st.success(f"📋 Ditemukan {len(df_filtered)} data mahasiswa pada Pertemuan {pilih_pertemuan_arsip}")
+                        st.dataframe(df_filtered, use_container_width=True)
+                        
+                        output = BytesIO()
+                        df_filtered.to_excel(output, index=False, engine='openpyxl')
+                        output.seek(0)
+                        
+                        st.download_button(
+                            label="⬇ expansion_button_excel Download Excel Pertemuan Ini",
+                            data=output,
+                            file_name=f"presensi_{pilih_makul_arsip}_P_{pilih_pertemuan_arsip}.xlsx",
+                            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        )
+                        
+                        st.markdown("---")
+                        st.markdown(f"##### 👥 Daftar Kehadiran Sesi Ke-{pilih_pertemuan_arsip}")
+                        st.markdown("<div style='background-color: white; padding: 20px; border-radius: 12px; border: 1px solid #E2E8F0;'>", unsafe_allow_html=True)
+                        
+                        df_filtered = df_filtered.reset_index(drop=True)
+                        for index, row in df_filtered.iterrows():
+                            st.markdown(f"**{index + 1}. {row['Nama']}** ({row['NIM']}) <br><small style='color: #64748B;'>🕒 Masuk: {row['Jam Isi']} WIB | Tgl: {row['Tanggal']}</small>", unsafe_allow_html=True)
+                        st.markdown("</div>", unsafe_allow_html=True)
                     else:
-                        st.error("Masukkan URL aplikasi!")
+                        st.warning(f"Tidak ada data presensi mahasiswa untuk **Pertemuan Ke-{pilih_pertemuan_arsip}**.")
+                else:
+                    st.info(f"Belum ada mahasiswa yang mengisi presensi sama sekali untuk kelas ini.")
+            except gspread.exceptions.WorksheetNotFound:
+                st.info(f"Belum ada riwayat presensi yang terekam di database untuk kelas {pilih_makul_arsip}.")
+            except Exception as e:
+                st.error(f"Error: {e}")
 
-            # ── MENU: REKAP ───────────────────────────────────────
-            elif menu == 'Rekap':
-                st.markdown("<div class='dash-title'>Rekapitulasi & Histori</div>", unsafe_allow_html=True)
-                st.markdown("<div class='dash-sub'>Lihat data kehadiran, filter per pertemuan, dan download Excel.</div>", unsafe_allow_html=True)
-
-                makul_arsip_opsi = DATA_JADWAL[pilihan_dosen]
-                pilih_makul_arsip = st.selectbox("Mata Kuliah", options=makul_arsip_opsi, key="rekap_makul")
-                input_makul_arsip_gabungan = f"{pilih_makul_arsip} ({pilihan_dosen})"
-
-                # Rekap semester
-                st.markdown("<div class='sec-label'>Master Rekap Semester</div>", unsafe_allow_html=True)
-                if st.button("Ambil Data Semua Pertemuan (1–16)", use_container_width=True):
-                    try:
-                        sheet   = get_sheet()
-                        nama_ws = input_makul_arsip_gabungan.replace("/", "-").replace(":", "-")[:50]
-                        ws      = sheet.worksheet(nama_ws)
-                        data    = ws.get_all_records()
-                        if data:
-                            df_all = pd.DataFrame(data)
-                            if 'Pertemuan Ke' in df_all.columns and 'NIM' in df_all.columns:
-                                df_all['_p'] = pd.to_numeric(df_all['Pertemuan Ke'], errors='coerce')
-                                df_all = df_all.sort_values(by=['_p', 'NIM']).drop(columns=['_p'])
-                            st.success(f"Total {len(df_all)} baris data kehadiran.")
-                            output_all = BytesIO()
-                            df_all.to_excel(output_all, index=False, engine='openpyxl')
-                            output_all.seek(0)
-                            st.download_button(
-                                label="Download Excel Rekap Semester",
-                                data=output_all,
-                                file_name=f"REKAP_{pilih_makul_arsip}.xlsx",
-                                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                use_container_width=True
-                            )
-                        else:
-                            st.info("Belum ada data untuk mata kuliah ini.")
-                    except gspread.exceptions.WorksheetNotFound:
-                        st.info("Belum ada data presensi.")
-                    except Exception as e:
-                        st.error(f"Gagal: {e}")
-
-                # Filter per pertemuan
-                st.markdown("<div class='sec-label'>Filter Per Pertemuan</div>", unsafe_allow_html=True)
-                col_p, col_btn2 = st.columns([2,1])
-                with col_p:
-                    pilih_pertemuan_arsip = st.selectbox("Pertemuan", options=[str(i) for i in range(1,17)], key="rekap_pertemuan")
-                with col_btn2:
-                    st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
-                    btn_tampil = st.button("Tampilkan", use_container_width=True)
-
-                if btn_tampil:
-                    try:
-                        sheet   = get_sheet()
-                        nama_ws = input_makul_arsip_gabungan.replace("/", "-").replace(":", "-")[:50]
-                        ws      = sheet.worksheet(nama_ws)
-                        data    = ws.get_all_records()
-                        if data:
-                            df_all      = pd.DataFrame(data)
-                            df_filtered = df_all[df_all['Pertemuan Ke'].astype(str) == str(pilih_pertemuan_arsip)]
-                            if not df_filtered.empty:
-                                if "Mata Kuliah" in df_filtered.columns:
-                                    df_filtered = df_filtered.drop(columns=["Mata Kuliah"])
-                                st.success(f"{len(df_filtered)} mahasiswa hadir pada Pertemuan {pilih_pertemuan_arsip}")
-                                st.dataframe(df_filtered.reset_index(drop=True), use_container_width=True)
-                                out2 = BytesIO()
-                                df_filtered.to_excel(out2, index=False, engine='openpyxl')
-                                out2.seek(0)
-                                st.download_button(
-                                    label="Download Excel Pertemuan Ini",
-                                    data=out2,
-                                    file_name=f"presensi_{pilih_makul_arsip}_P{pilih_pertemuan_arsip}.xlsx",
-                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                                )
-                            else:
-                                st.warning(f"Tidak ada data untuk Pertemuan {pilih_pertemuan_arsip}.")
-                        else:
-                            st.info("Belum ada data.")
-                    except gspread.exceptions.WorksheetNotFound:
-                        st.info("Belum ada data presensi untuk kelas ini.")
-                    except Exception as e:
-                        st.error(f"Error: {e}")
-
-                # Histori log
-                st.markdown("<div class='sec-label'>Histori Log Aktivitas</div>", unsafe_allow_html=True)
-                try:
-                    sheet   = get_sheet()
-                    nama_ws = input_makul_arsip_gabungan.replace("/", "-").replace(":", "-")[:50]
-                    ws      = sheet.worksheet(nama_ws)
-                    data_histori = ws.get_all_records()
-                    if data_histori:
-                        df_h = pd.DataFrame(data_histori)
-                        if 'Pertemuan Ke' in df_h.columns:
-                            summary = df_h.groupby('Pertemuan Ke').agg(
-                                total_mhs=('NIM','count'), tgl_awal=('Tanggal','min'), tgl_akhir=('Tanggal','max')
-                            ).reset_index()
-                            summary['_p'] = pd.to_numeric(summary['Pertemuan Ke'], errors='coerce')
-                            summary = summary.sort_values('_p').drop(columns=['_p'])
-                            for _, rh in summary.iterrows():
-                                tgl = rh['tgl_awal'] if rh['tgl_awal'] == rh['tgl_akhir'] else f"{rh['tgl_awal']} s/d {rh['tgl_akhir']}"
-                                st.markdown(f"""
-                                    <div class="histori-container">
-                                        <b>Pertemuan Ke-{rh['Pertemuan Ke']}</b><br>
-                                        <span style='font-size:12px;color:#475569;'>
-                                            {rh['total_mhs']} mahasiswa hadir &nbsp;·&nbsp; {tgl}
-                                        </span>
-                                    </div>
-                                """, unsafe_allow_html=True)
-                        else:
-                            st.caption("Struktur kolom histori belum siap.")
-                    else:
-                        st.info("Belum ada histori pertemuan.")
-                except gspread.exceptions.WorksheetNotFound:
-                    st.info("Belum ada riwayat kelas (sheet belum terbentuk).")
-                except Exception as e:
-                    st.caption(f"Tidak dapat memuat histori: {e}")
+        # --- FITUR HISTORI JEJAK PERTEMUAN AKTIF ---
+        st.markdown("<hr>", unsafe_allow_html=True)
+        st.markdown("##### 📜 Histori Log Aktivitas Kelas")
+        st.caption("Berikut adalah histori pertemuan yang sudah memiliki riwayat presensi masuk di database:")
+        
+        try:
+            sheet   = get_sheet()
+            nama_ws = input_makul_arsip_gabungan.replace("/", "-").replace(":", "-")[:50]
+            ws      = sheet.worksheet(nama_ws)
+            data_histori = ws.get_all_records()
+            
+            if data_histori:
+                df_histori = pd.DataFrame(data_histori)
+                if 'Pertemuan Ke' in df_histori.columns:
+                    # Mengelompokkan data berdasarkan pertemuan untuk melihat log statistik unik
+                    summary_histori = df_histori.groupby('Pertemuan Ke').agg(
+                        total_mhs=('NIM', 'count'),
+                        tgl_awal=('Tanggal', 'min'),
+                        tgl_akhir=('Tanggal', 'max')
+                    ).reset_index()
+                    
+                    # Urutkan berdasarkan nomor pertemuan
+                    summary_histori['Pertemuan_Int'] = pd.to_numeric(summary_histori['Pertemuan Ke'], errors='coerce')
+                    summary_histori = summary_histori.sort_values(by='Pertemuan_Int').drop(columns=['Pertemuan_Int'])
+                    
+                    for _, row_h in summary_histori.iterrows():
+                        info_tanggal = row_h['tgl_awal'] if row_h['tgl_awal'] == row_h['tgl_akhir'] else f"{row_h['tgl_awal']} s/d {row_h['tgl_akhir']}"
+                        st.markdown(f"""
+                            <div class="histori-container">
+                                📅 <b>Pertemuan Ke-{row_h['Pertemuan Ke']}</b><br>
+                                <span style='font-size:13px; color:#475569;'>
+                                    👥 Jumlah Mahasiswa Hadir: <b>{row_h['total_mhs']} Orang</b><br>
+                                    🕒 Tanggal Pelaksanaan: {info_tanggal}
+                                </span>
+                            </div>
+                        """, unsafe_allow_html=True)
+                else:
+                    st.caption("Struktur kolom histori belum siap.")
+            else:
+                st.info("Belum ada histori pertemuan yang terekam aktif.")
+        except gspread.exceptions.WorksheetNotFound:
+            st.info("Belum ada riwayat kelas aktif (sheet database belum terbentuk).")
+        except Exception as e:
+            st.caption(f"Tidak dapat memuat log histori aktivitas: {e}")
