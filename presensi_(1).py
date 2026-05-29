@@ -375,7 +375,7 @@ def ke_halaman(nama):
 st.markdown("""
     <div class="header-banner">
         <h1>PRESENSI BISNIS DIGITAL</h1>
-        <p>Sistem Validasi Akademik Terintegrasi</p>
+        <p>Beta ver 0.932</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -627,15 +627,21 @@ elif st.session_state['halaman'] == 'dosen':
         # TAB 2: MONITOR KELAS AKTIF (GLOBAL)
         # ----------------------------------------------------
         with tab2:
-            # Penggunaan Metrik
-            st.metric(label="Total Kelas Sedang Berjalan (Global)", value=f"{len(kelas_aktif_sekarang)} Kelas")
+            col_metric, col_reload = st.columns([4, 1])
+            with col_metric:
+                st.metric(label="Total Kelas Sedang Berjalan (Global)", value=f"{len(kelas_aktif_sekarang)} Kelas")
+            with col_reload:
+                st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
+                if st.button("🔄 Reload", use_container_width=True, key="reload_monitor"):
+                    st.rerun()
+
             st.markdown("---")
-            
+
             if kelas_aktif_sekarang:
                 for idx_k, k in enumerate(kelas_aktif_sekarang):
                     nm = k['makul'].rsplit(' (', 1)[0]
                     nd = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
-                    
+
                     with st.container(border=True):
                         col_info, col_btn = st.columns([4, 1])
                         with col_info:
@@ -645,6 +651,43 @@ elif st.session_state['halaman'] == 'dosen':
                                 tutup_kelas_by_makul(k['makul'])
                                 st.toast(f"Kelas {nm} berhasil ditutup.", icon="🧹")
                                 st.rerun()
+
+                        # Expander lihat mahasiswa yang sudah mengisi
+                        with st.expander(f"Lihat mahasiswa yang sudah hadir"):
+                            try:
+                                sheet_mon = get_sheet()
+                                nama_ws_mon = k['makul'].replace("/", "-").replace(":", "-")[:50]
+                                ws_mon = sheet_mon.worksheet(nama_ws_mon)
+                                data_mon = ws_mon.get_all_records()
+
+                                if data_mon:
+                                    df_mon = pd.DataFrame(data_mon)
+                                    # Filter hanya pertemuan yang sedang aktif
+                                    df_mon_filtered = df_mon[
+                                        df_mon['Pertemuan Ke'].astype(str) == str(k['pertemuan'])
+                                    ]
+
+                                    if not df_mon_filtered.empty:
+                                        df_mon_filtered = df_mon_filtered.reset_index(drop=True)
+                                        st.success(f"**{len(df_mon_filtered)} mahasiswa** sudah mengisi presensi Pertemuan {k['pertemuan']}")
+
+                                        for i, row in df_mon_filtered.iterrows():
+                                            st.markdown(
+                                                f"**{i+1}. {row['Nama']}** &nbsp;<span style='color:#64748B;font-size:13px;'>({row['NIM']})</span>"
+                                                f"<br><span style='font-size:12px;color:#94A3B8;'>🕒 {row['Jam Isi']} WIB &nbsp;·&nbsp; {row['Tanggal']}</span>",
+                                                unsafe_allow_html=True
+                                            )
+                                            if i < len(df_mon_filtered) - 1:
+                                                st.markdown("<hr style='margin:6px 0;border-color:#F1F5F9;'>", unsafe_allow_html=True)
+                                    else:
+                                        st.info(f"Belum ada mahasiswa yang mengisi presensi Pertemuan {k['pertemuan']}.")
+                                else:
+                                    st.info("Belum ada data presensi sama sekali untuk kelas ini.")
+
+                            except gspread.exceptions.WorksheetNotFound:
+                                st.info("Belum ada data presensi untuk kelas ini.")
+                            except Exception as e:
+                                st.error(f"Gagal memuat data: {e}")
             else:
                 st.caption("Tidak ada aktivitas kelas di universitas saat ini.")
 
