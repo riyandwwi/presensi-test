@@ -849,7 +849,11 @@ elif st.session_state['halaman'] == 'mahasiswa':
 
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("💬 Masuk Chat Kelas", use_container_width=True, key="btn_ke_chat_mhs"):
-            ke_halaman('chat_pilih')
+            # Set nickname otomatis dari nama presensi
+            st.session_state['chat_nickname']      = kd['nama']
+            st.session_state['chat_kelas_dipilih'] = kd['makul_raw']
+            st.session_state['chat_role']          = 'mahasiswa'
+            ke_halaman('chat_room')
 
     else:
         semua_kelas_aktif = baca_semua_kelas_aktif()
@@ -950,7 +954,7 @@ elif st.session_state['halaman'] == 'mahasiswa':
                     st.error(f"Gagal menghubungi database: {e}")
 
 # ============================================================
-# HALAMAN CHAT — PILIH KELAS & NICKNAME
+# HALAMAN CHAT — PILIH KELAS (MAHASISWA ONLY)
 # ============================================================
 elif st.session_state['halaman'] == 'chat_pilih':
 
@@ -961,61 +965,57 @@ elif st.session_state['halaman'] == 'chat_pilih':
 
     semua_kelas_aktif = baca_semua_kelas_aktif()
 
-    st.markdown("<h3 style='text-align:center;font-weight:700;'>💬 Masuk Ruang Chat Kelas</h3>", unsafe_allow_html=True)
-    st.markdown("<p style='text-align:center;opacity:0.6;font-size:14px;'>Tidak perlu login. Pilih kelas aktif dan isi nickname kamu.</p>", unsafe_allow_html=True)
+    st.markdown("<h3 style='text-align:center;font-weight:700;'>💬 Ruang Chat Kelas</h3>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
+
+    # Jika sudah presensi, nickname sudah ada — langsung pilih kelas
+    sudah_presensi = st.session_state.get('sudah_presensi', False)
+    konfirmasi     = st.session_state.get('konfirmasi_data', None)
 
     if not semua_kelas_aktif:
         st.info("🕒 Belum ada kelas aktif. Chat hanya tersedia saat dosen membuka kelas.")
+
+    elif sudah_presensi and konfirmasi:
+        # Sudah presensi — langsung masuk dengan nama dari presensi
+        st.success(f"✅ Hadir sebagai **{konfirmasi['nama']}** di kelas **{konfirmasi['makul']}**")
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("💬 Lanjut ke Ruang Chat", use_container_width=True, key="btn_lanjut_chat"):
+            st.session_state['chat_nickname']      = konfirmasi['nama']
+            st.session_state['chat_kelas_dipilih'] = konfirmasi['makul_raw']
+            st.session_state['chat_role']          = 'mahasiswa'
+            ke_halaman('chat_room')
+
     else:
+        # Belum presensi — minta nama dulu sebelum chat
+        st.markdown("""
+            <div style='background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);
+                border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:14px;'>
+                🧑‍🎓 <b>Untuk mahasiswa:</b> Isi presensi dulu agar nickname otomatis terisi.
+                Atau kamu bisa langsung masuk dengan mengisi nama di bawah.
+            </div>
+        """, unsafe_allow_html=True)
+
+        def label_kelas_chat(k):
+            nm = k['makul'].rsplit(' (', 1)[0]
+            nd = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
+            return f"{nm} | {nd} | Pertemuan {k['pertemuan']}"
+
         with st.form(key="form_chat_masuk"):
-            # Pilih Role
-            role_dipilih = st.radio("Saya adalah:", ["Mahasiswa 🧑‍🎓", "Dosen 👨‍🏫"], horizontal=True)
-
-            # Pilih Kelas
-            def label_kelas_chat(k):
-                nm = k['makul'].rsplit(' (', 1)[0]
-                nd = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
-                return f"{nm} | {nd} | Pertemuan {k['pertemuan']}"
-
-            opsi_kelas_chat = [label_kelas_chat(k) for k in semua_kelas_aktif]
-            pilih_kelas_chat = st.selectbox("Pilih Kelas yang Ingin Dimasuki:", options=opsi_kelas_chat)
-
-            # Nickname
-            nickname_input = st.text_input("Nickname / Nama Panggilan:", placeholder="Contoh: Budi atau Pak Riyan")
-
-            # Jika dosen, perlu kode akses
-            kode_dosen_input = ""
-            role_clean = "mahasiswa"
-            if "Dosen" in role_dipilih:
-                kode_dosen_input = st.text_input("Kode Akses Dosen:", type="password", placeholder="Masukkan kode dosen")
-                role_clean = "dosen"
-            else:
-                role_clean = "mahasiswa"
-
+            opsi_kelas_chat  = [label_kelas_chat(k) for k in semua_kelas_aktif]
+            pilih_kelas_chat = st.selectbox("Pilih Kelas:", options=opsi_kelas_chat)
+            nickname_input   = st.text_input("Nama Kamu:", placeholder="Contoh: Budi Santoso")
             st.markdown("<br>", unsafe_allow_html=True)
-            masuk_chat_btn = st.form_submit_button("Masuk Ruang Chat 💬")
+            masuk_chat_btn   = st.form_submit_button("Masuk Ruang Chat 💬")
 
         if masuk_chat_btn:
             if not nickname_input.strip():
-                st.error("Nickname wajib diisi!")
-            elif role_clean == "dosen":
-                PASSWORD_DOSEN = st.secrets.get("password_dosen", "dosen123")
-                if kode_dosen_input != PASSWORD_DOSEN:
-                    st.error("❌ Kode akses dosen tidak valid!")
-                else:
-                    idx = opsi_kelas_chat.index(pilih_kelas_chat)
-                    kelas_obj = semua_kelas_aktif[idx]
-                    st.session_state['chat_nickname'] = f"[Dosen] {nickname_input.strip()}"
-                    st.session_state['chat_kelas_dipilih'] = kelas_obj['makul']
-                    st.session_state['chat_role'] = 'dosen'
-                    ke_halaman('chat_room')
+                st.error("Nama wajib diisi!")
             else:
-                idx = opsi_kelas_chat.index(pilih_kelas_chat)
+                idx       = opsi_kelas_chat.index(pilih_kelas_chat)
                 kelas_obj = semua_kelas_aktif[idx]
-                st.session_state['chat_nickname'] = nickname_input.strip()
+                st.session_state['chat_nickname']      = nickname_input.strip()
                 st.session_state['chat_kelas_dipilih'] = kelas_obj['makul']
-                st.session_state['chat_role'] = 'mahasiswa'
+                st.session_state['chat_role']          = 'mahasiswa'
                 ke_halaman('chat_room')
 
 # ============================================================
@@ -1073,13 +1073,19 @@ elif st.session_state['halaman'] == 'chat_room':
             </div>
         """, unsafe_allow_html=True)
     else:
-        bubbles_html = '<div class="chat-scroll-area">'
+        # Buka scroll area
+        st.markdown('<div class="chat-scroll-area">', unsafe_allow_html=True)
+
         for msg in pesan_list:
             is_self   = str(msg.get('nickname','')) == nickname
             msg_role  = str(msg.get('role','mahasiswa'))
             nick      = str(msg.get('nickname','?'))
             ts_raw    = str(msg.get('timestamp',''))
             pesan_txt = str(msg.get('pesan',''))
+
+            # Escape HTML chars dalam pesan agar aman
+            import html as html_lib
+            pesan_safe = html_lib.escape(pesan_txt)
 
             # Format timestamp
             try:
@@ -1088,27 +1094,28 @@ elif st.session_state['halaman'] == 'chat_room':
             except Exception:
                 ts_disp = ts_raw[-5:] if len(ts_raw) >= 5 else ts_raw
 
-            avatar_class = "dos" if msg_role == "dosen" else "mhs"
-            avatar_emoji = "👨‍🏫" if msg_role == "dosen" else nick[0].upper() if nick else "?"
+            is_dosen     = (msg_role == "dosen")
             wrapper_cls  = "self" if is_self else ""
             bubble_cls   = "self" if is_self else "other"
             meta_cls     = "self" if is_self else ""
+            avatar_cls   = "dos" if is_dosen else "mhs"
+            avatar_letter = "D" if is_dosen else (nick[0].upper() if nick else "?")
+            nick_disp    = "Kamu" if is_self else html_lib.escape(nick)
+            dosen_tag    = '<span class="chat-dosen-badge" style="margin-left:4px;font-size:10px;">DOSEN</span>' if is_dosen else ""
+            name_align   = "text-align:right;" if is_self else ""
 
-            dosen_tag = '<span class="chat-dosen-badge" style="margin-left:4px;font-size:10px;">DOSEN</span>' if msg_role == "dosen" else ""
-            nick_disp = nick if not is_self else "Kamu"
+            bubble_html = f"""<div class="chat-bubble-wrapper {wrapper_cls}">
+  <div class="chat-avatar {avatar_cls}">{avatar_letter}</div>
+  <div style="display:flex;flex-direction:column;{'align-items:flex-end;' if is_self else ''}">
+    <div style="font-size:11px;opacity:0.5;margin-bottom:3px;{name_align}">{nick_disp}{dosen_tag}</div>
+    <div class="chat-bubble {bubble_cls}">{pesan_safe}</div>
+    <span class="chat-meta {meta_cls}">{ts_disp} WIB</span>
+  </div>
+</div>"""
+            st.markdown(bubble_html, unsafe_allow_html=True)
 
-            bubbles_html += f"""
-            <div class="chat-bubble-wrapper {wrapper_cls}">
-                <div class="chat-avatar {avatar_class}">{avatar_emoji}</div>
-                <div>
-                    <div style="font-size:11px;opacity:0.5;margin-bottom:3px;{'text-align:right;' if is_self else ''}">{nick_disp}{dosen_tag}</div>
-                    <div class="chat-bubble {bubble_cls}">{pesan_txt}</div>
-                    <span class="chat-meta {meta_cls}">{ts_disp} WIB</span>
-                </div>
-            </div>
-            """
-        bubbles_html += '</div>'
-        st.markdown(bubbles_html, unsafe_allow_html=True)
+        # Tutup scroll area
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # Form kirim pesan
     with st.form(key="form_kirim_pesan", clear_on_submit=True):
