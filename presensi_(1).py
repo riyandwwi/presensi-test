@@ -17,6 +17,7 @@ tz_wib         = pytz.timezone('Asia/Jakarta')
 waktu_sekarang = datetime.now(tz_wib)
 
 DEFAULTS = {
+    'prodi':             'Bisnis Digital', # Tambahan untuk filter Prodi
     'dosen_login':       False,
     'sudah_presensi':    False,
     'halaman':           'landing',
@@ -35,7 +36,7 @@ for k, v in DEFAULTS.items():
 # ============================================================
 # CONFIG HALAMAN
 # ============================================================
-st.set_page_config(page_title="Presensi Bisnis Digital", page_icon="📝", layout="centered")
+st.set_page_config(page_title="Presensi Bisnis Digital & Aktuaria", page_icon="📝", layout="centered")
 
 # ============================================================
 # CSS — DARK MODE COMPATIBLE (FULL FIX)
@@ -102,30 +103,25 @@ div[data-testid="stTextArea"] textarea::placeholder {
 /* ══════════════════════════════════════════
    SELECTBOX / DROPDOWN — FULL FIX
 ══════════════════════════════════════════ */
-/* Kontainer utama selectbox */
 div[data-testid="stSelectbox"] > div[data-baseweb="select"] > div,
 div[data-testid="stSelectbox"] > div > div[data-baseweb="select"] > div {
     background-color: var(--secondary-background-color) !important;
     border: 1.5px solid rgba(128,128,128,0.35) !important;
     border-radius: 10px !important;
 }
-/* Teks yang tampil di selectbox */
 div[data-baseweb="select"] span,
 div[data-baseweb="select"] div,
 div[data-testid="stSelectbox"] span {
     color: var(--text-color) !important;
     background-color: transparent !important;
 }
-/* Ikon panah dropdown */
 div[data-baseweb="select"] svg {
     fill: var(--text-color) !important;
     opacity: 0.6;
 }
-/* Hover state kontainer */
 div[data-baseweb="select"] > div:hover {
     border-color: #6366F1 !important;
 }
-/* ── Dropdown MENU (popover/listbox) ── */
 div[data-baseweb="popover"],
 div[data-baseweb="popover"] > div,
 ul[data-baseweb="menu"],
@@ -136,32 +132,23 @@ div[data-baseweb="menu"] {
     border-radius: 10px !important;
     box-shadow: 0 8px 24px rgba(0,0,0,0.18) !important;
 }
-/* ── Item dalam dropdown list ── */
-li[role="option"],
-div[role="option"] {
+li[role="option"], div[role="option"] {
     background-color: var(--secondary-background-color) !important;
     color: var(--text-color) !important;
 }
-li[role="option"]:hover,
-div[role="option"]:hover,
-li[aria-selected="true"],
-div[aria-selected="true"] {
+li[role="option"]:hover, div[role="option"]:hover,
+li[aria-selected="true"], div[aria-selected="true"] {
     background-color: rgba(99,102,241,0.15) !important;
     color: var(--text-color) !important;
 }
-/* BaseUI list container */
-[data-baseweb="menu"] ul li,
-[data-baseweb="list"] li {
+[data-baseweb="menu"] ul li, [data-baseweb="list"] li {
     background-color: var(--secondary-background-color) !important;
     color: var(--text-color) !important;
 }
 [data-baseweb="menu"] ul li:hover {
     background-color: rgba(99,102,241,0.12) !important;
 }
-/* fallback lebar untuk semua div di dalam select */
-div[data-testid="stSelectbox"] * {
-    color: var(--text-color) !important;
-}
+div[data-testid="stSelectbox"] * { color: var(--text-color) !important; }
 
 /* ══════════════════════════════════════════
    RADIO BUTTON
@@ -174,7 +161,7 @@ div[data-testid="stRadio"] > div {
     background: var(--secondary-background-color) !important;
     border: 1px solid rgba(128,128,128,0.2) !important;
     border-radius: 10px !important;
-    padding: 4px !important;
+    padding: 8px 16px !important;
 }
 
 /* ══════════════════════════════════════════
@@ -204,284 +191,59 @@ button[kind="formSubmit"]:hover {
     box-shadow: 0 6px 20px rgba(79,70,229,0.45) !important;
     transform: translateY(-1px) !important;
 }
-/* Regular buttons dark mode */
-button[kind="secondary"],
-button[data-testid="baseButton-secondary"] {
+button[kind="secondary"], button[data-testid="baseButton-secondary"] {
     background-color: var(--secondary-background-color) !important;
     color: var(--text-color) !important;
     border: 1px solid rgba(128,128,128,0.3) !important;
     border-radius: 10px !important;
 }
-button[kind="secondary"]:hover,
-button[data-testid="baseButton-secondary"]:hover {
+button[kind="secondary"]:hover, button[data-testid="baseButton-secondary"]:hover {
     border-color: #6366F1 !important;
     color: #6366F1 !important;
 }
 
 /* ══════════════════════════════════════════
-   CONTAINER (border=True) — DASHBOARD
+   CONTAINER, TABS, METRIC, EXPANDER, ALERT
 ══════════════════════════════════════════ */
-div[data-testid="stVerticalBlockBorderWrapper"],
-div[data-testid="stVerticalBlockBorderWrapper"] > div {
+div[data-testid="stVerticalBlockBorderWrapper"], div[data-testid="stVerticalBlockBorderWrapper"] > div {
     background-color: var(--secondary-background-color) !important;
-    border: 1px solid rgba(128,128,128,0.2) !important;
-    border-radius: 12px !important;
+    border: 1px solid rgba(128,128,128,0.2) !important; border-radius: 12px !important;
 }
+div[data-testid="stTabs"] > div:first-child { border-bottom: 2px solid rgba(128,128,128,0.15) !important; }
+button[data-baseweb="tab"] { color: var(--text-color) !important; background: transparent !important; opacity: 0.6; }
+button[data-baseweb="tab"][aria-selected="true"] { color: #6366F1 !important; opacity: 1; border-bottom-color: #6366F1 !important; }
+div[data-testid="stMetric"] { background: var(--secondary-background-color) !important; border: 1px solid rgba(128,128,128,0.2) !important; border-radius: 12px !important; padding: 12px 16px !important; }
+details[data-testid="stExpander"] > summary { background: var(--secondary-background-color) !important; border: 1px solid rgba(128,128,128,0.2) !important; border-radius: 8px !important; }
+div[data-testid="stExpanderDetails"] { background: var(--secondary-background-color) !important; border: 1px solid rgba(128,128,128,0.15) !important; border-top: none !important; border-radius: 0 0 8px 8px !important; }
+div[data-testid="stAlert"] { border-radius: 10px !important; }
+div[data-testid="stDataFrame"], iframe[title="st_dataframe"] { border-radius: 10px !important; border: 1px solid rgba(128,128,128,0.2) !important; }
+input[type="password"] { background-color: var(--secondary-background-color) !important; color: var(--text-color) !important; border: 1.5px solid rgba(128,128,128,0.35) !important; border-radius: 10px !important; }
 
-/* ══════════════════════════════════════════
-   TABS — dark mode
-══════════════════════════════════════════ */
-div[data-testid="stTabs"] > div:first-child {
-    border-bottom: 2px solid rgba(128,128,128,0.15) !important;
-}
-button[data-baseweb="tab"] {
-    color: var(--text-color) !important;
-    background: transparent !important;
-    opacity: 0.6;
-}
-button[data-baseweb="tab"][aria-selected="true"] {
-    color: #6366F1 !important;
-    opacity: 1;
-    border-bottom-color: #6366F1 !important;
-}
-div[data-testid="stTabsContent"] {
-    background: transparent !important;
-}
-
-/* ══════════════════════════════════════════
-   METRIC WIDGET
-══════════════════════════════════════════ */
-div[data-testid="stMetric"] {
-    background: var(--secondary-background-color) !important;
-    border: 1px solid rgba(128,128,128,0.2) !important;
-    border-radius: 12px !important;
-    padding: 12px 16px !important;
-}
-div[data-testid="stMetricValue"],
-div[data-testid="stMetricLabel"] {
-    color: var(--text-color) !important;
-}
-
-/* ══════════════════════════════════════════
-   EXPANDER
-══════════════════════════════════════════ */
-details[data-testid="stExpander"] > summary {
-    background: var(--secondary-background-color) !important;
-    color: var(--text-color) !important;
-    border: 1px solid rgba(128,128,128,0.2) !important;
-    border-radius: 8px !important;
-}
-details[data-testid="stExpander"] > summary:hover {
-    border-color: #6366F1 !important;
-}
-div[data-testid="stExpanderDetails"] {
-    background: var(--secondary-background-color) !important;
-    border: 1px solid rgba(128,128,128,0.15) !important;
-    border-top: none !important;
-    border-radius: 0 0 8px 8px !important;
-    color: var(--text-color) !important;
-}
-
-/* ══════════════════════════════════════════
-   ALERT BOXES (success/info/warning/error)
-══════════════════════════════════════════ */
-div[data-testid="stAlert"] {
-    border-radius: 10px !important;
-}
-/* Info */
-div[data-testid="stAlert"][data-baseweb="notification"][kind="info"] {
-    background: rgba(99,102,241,0.1) !important;
-    border: 1px solid rgba(99,102,241,0.25) !important;
-}
-/* Success */
-div[data-testid="stAlert"][kind="success"],
-div.stSuccess > div {
-    background: rgba(16,185,129,0.1) !important;
-    border: 1px solid rgba(16,185,129,0.3) !important;
-}
-/* Warning */
-div[data-testid="stAlert"][kind="warning"],
-div.stWarning > div {
-    background: rgba(251,191,36,0.1) !important;
-    border: 1px solid rgba(251,191,36,0.3) !important;
-}
-
-/* ══════════════════════════════════════════
-   DATAFRAME
-══════════════════════════════════════════ */
-div[data-testid="stDataFrame"],
-iframe[title="st_dataframe"] {
-    border-radius: 10px !important;
-    overflow: hidden !important;
-    border: 1px solid rgba(128,128,128,0.2) !important;
-}
-
-/* ══════════════════════════════════════════
-   SELECTBOX PASSWORD INPUT
-══════════════════════════════════════════ */
-input[type="password"] {
-    background-color: var(--secondary-background-color) !important;
-    color: var(--text-color) !important;
-    border: 1.5px solid rgba(128,128,128,0.35) !important;
-    border-radius: 10px !important;
-}
-
-/* ══════════════════════════════════════════
-   CAPTION & SMALL TEXT
-══════════════════════════════════════════ */
-div[data-testid="stCaptionContainer"] p,
-small, .stCaption {
-    color: var(--text-color) !important;
-    opacity: 0.55;
-}
-
-/* ── Clock Box ── */
-.clock-container {
-    background: rgba(251,191,36,0.12);
-    border: 1px solid rgba(251,191,36,0.4);
-    border-radius: 12px;
-    padding: 12px; text-align: center; margin-bottom: 20px;
-    color: #D97706; font-weight: 600; font-size: 14px;
-}
-
-/* ── Kelas Badge ── */
-.kelas-badge {
-    background: var(--secondary-background-color);
-    border-left: 4px solid #6366F1; border-radius: 8px;
-    padding: 12px 16px; margin-bottom: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
-    color: var(--text-color);
-}
-
-/* ── Konfirmasi Box ── */
-.konfirmasi-box {
-    background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.06) 100%);
-    border: 2px solid rgba(16,185,129,0.5); border-radius: 20px;
-    padding: 30px; text-align: center; margin: 10px 0 20px 0;
-}
+/* ── Custom Widgets ── */
+.clock-container { background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.4); border-radius: 12px; padding: 12px; text-align: center; margin-bottom: 20px; color: #D97706; font-weight: 600; font-size: 14px; }
+.kelas-badge { background: var(--secondary-background-color); border-left: 4px solid #6366F1; border-radius: 8px; padding: 12px 16px; margin-bottom: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); color: var(--text-color); }
+.konfirmasi-box { background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.06) 100%); border: 2px solid rgba(16,185,129,0.5); border-radius: 20px; padding: 30px; text-align: center; margin: 10px 0 20px 0; }
 .konfirmasi-box h2 { color: #10B981 !important; font-size: 22px; margin-bottom: 8px; }
-.konfirmasi-box .detail { color: var(--text-color); opacity: 0.85; font-size: 15px; line-height: 1.8; }
-
-/* ── Counter Box ── */
-.counter-box {
-    background: var(--secondary-background-color);
-    border-radius: 12px; padding: 14px 20px;
-    text-align: center; border: 1px solid rgba(128,128,128,0.2);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-top: 10px;
-}
+.counter-box { background: var(--secondary-background-color); border-radius: 12px; padding: 14px 20px; text-align: center; border: 1px solid rgba(128,128,128,0.2); margin-top: 10px; }
 .counter-box .angka { font-size: 32px; font-weight: 800; color: #6366F1; }
-.counter-box .label { font-size: 13px; color: var(--text-color); opacity: 0.6; margin-top: 2px; }
-
-/* ── Histori Container ── */
-.histori-container {
-    background-color: var(--secondary-background-color);
-    border: 1px solid rgba(128,128,128,0.2);
-    border-left: 4px solid #10B981; border-radius: 8px;
-    padding: 15px; margin-bottom: 12px;
-    color: var(--text-color);
-}
-
-/* ── Token Expired ── */
-.token-expired {
-    background: rgba(220,38,38,0.1); border: 2px solid rgba(220,38,38,0.3);
-    border-radius: 16px; padding: 24px; text-align: center; color: #EF4444;
-}
-
-/* ── Pilih Akses Card ── */
-.akses-card {
-    background: var(--secondary-background-color);
-    border-radius: 16px; padding: 30px 20px;
-    text-align: center;
-    border: 1.5px solid rgba(128,128,128,0.2);
-    transition: all 0.2s;
-}
+.histori-container { background-color: var(--secondary-background-color); border: 1px solid rgba(128,128,128,0.2); border-left: 4px solid #10B981; border-radius: 8px; padding: 15px; margin-bottom: 12px; }
+.akses-card { background: var(--secondary-background-color); border-radius: 16px; padding: 30px 20px; text-align: center; border: 1.5px solid rgba(128,128,128,0.2); transition: all 0.2s; }
 .akses-card:hover { border-color: #6366F1; }
 
-/* ── Chat Bubble Styles ── */
-.chat-bubble-wrapper {
-    display: flex;
-    margin-bottom: 12px;
-    align-items: flex-end;
-    gap: 8px;
-}
-.chat-bubble-wrapper.self {
-    flex-direction: row-reverse;
-}
-.chat-avatar {
-    width: 32px; height: 32px;
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 14px; flex-shrink: 0;
-    font-weight: 700;
-}
+/* ── Chat Widget ── */
+.chat-bubble-wrapper { display: flex; margin-bottom: 12px; align-items: flex-end; gap: 8px; }
+.chat-bubble-wrapper.self { flex-direction: row-reverse; }
+.chat-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; font-weight: 700; }
 .chat-avatar.mhs { background: rgba(99,102,241,0.15); color: #6366F1; }
 .chat-avatar.dos  { background: rgba(16,185,129,0.15); color: #10B981; }
-.chat-bubble {
-    max-width: 72%;
-    padding: 10px 14px;
-    border-radius: 16px;
-    font-size: 14px;
-    line-height: 1.5;
-    word-break: break-word;
-}
-.chat-bubble.other {
-    background: var(--secondary-background-color);
-    border: 1px solid rgba(128,128,128,0.2);
-    color: var(--text-color);
-    border-bottom-left-radius: 4px;
-}
-.chat-bubble.self {
-    background: linear-gradient(135deg, #4F46E5, #6366F1);
-    color: white;
-    border-bottom-right-radius: 4px;
-}
-.chat-meta {
-    font-size: 11px;
-    color: var(--text-color);
-    opacity: 0.45;
-    margin-top: 4px;
-    display: block;
-}
-.chat-meta.self { text-align: right; }
-.chat-scroll-area {
-    max-height: 420px;
-    overflow-y: auto;
-    padding: 16px;
-    border-radius: 12px;
-    border: 1px solid rgba(128,128,128,0.2);
-    background: var(--background-color);
-    margin-bottom: 16px;
-}
-.chat-room-header {
-    background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
-    padding: 14px 18px; border-radius: 12px;
-    color: white; margin-bottom: 16px;
-    display: flex; align-items: center; gap: 10px;
-}
-.online-dot {
-    width: 10px; height: 10px; background: #4ADE80;
-    border-radius: 50%; display: inline-block;
-    box-shadow: 0 0 6px #4ADE80;
-}
-.chat-dosen-badge {
-    background: rgba(16,185,129,0.15);
-    color: #10B981;
-    border: 1px solid rgba(16,185,129,0.3);
-    border-radius: 20px;
-    padding: 2px 10px;
-    font-size: 11px;
-    font-weight: 700;
-}
-.nav-chat-btn {
-    background: linear-gradient(135deg, #7C3AED 0%, #6366F1 100%);
-    color: white !important;
-    border: none; border-radius: 10px;
-    padding: 8px 18px;
-    font-weight: 700; font-size: 14px;
-    cursor: pointer; width: 100%;
-    margin-top: 10px;
-    box-shadow: 0 4px 12px rgba(99,102,241,0.3);
-}
+.chat-bubble { max-width: 72%; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.5; word-break: break-word; }
+.chat-bubble.other { background: var(--secondary-background-color); border: 1px solid rgba(128,128,128,0.2); border-bottom-left-radius: 4px; }
+.chat-bubble.self { background: linear-gradient(135deg, #4F46E5, #6366F1); color: white; border-bottom-right-radius: 4px; }
+.chat-meta { font-size: 11px; opacity: 0.45; margin-top: 4px; display: block; }
+.chat-scroll-area { max-height: 420px; overflow-y: auto; padding: 16px; border-radius: 12px; border: 1px solid rgba(128,128,128,0.2); background: var(--background-color); margin-bottom: 16px; }
+.chat-room-header { background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%); padding: 14px 18px; border-radius: 12px; color: white; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+.online-dot { width: 10px; height: 10px; background: #4ADE80; border-radius: 50%; display: inline-block; box-shadow: 0 0 6px #4ADE80; }
+.chat-dosen-badge { background: rgba(16,185,129,0.15); color: #10B981; border: 1px solid rgba(16,185,129,0.3); border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -657,7 +419,6 @@ def get_or_create_chat_sheet():
             ws.append_row(["timestamp","kelas","nickname","role","pesan"])
             return ws
     except Exception as e:
-        st.error(f"Gagal membuat chat sheet: {e}")
         return None
 
 def kirim_pesan_chat(kelas, nickname, role, pesan):
@@ -668,7 +429,6 @@ def kirim_pesan_chat(kelas, nickname, role, pesan):
         ws.append_row([ts, kelas, nickname, role, pesan])
         return True
     except Exception as e:
-        st.error(f"Gagal kirim pesan: {e}")
         return False
 
 def baca_pesan_chat(kelas, limit=50):
@@ -682,9 +442,11 @@ def baca_pesan_chat(kelas, limit=50):
         return []
 
 # ============================================================
-# DATA JADWAL DOSEN
+# DATA JADWAL DOSEN BERDASARKAN PRODI
 # ============================================================
-DATA_JADWAL = {
+
+# --- Data Dosen Bisnis Digital ---
+DATA_JADWAL_BD = {
     "Riyan Dwi Yulian P, S.Kom., M.Kom.": [
         "Analisis Perancangan Berbasis Objek A",
         "Analisis Perancangan Berbasis Objek B",
@@ -739,6 +501,29 @@ DATA_JADWAL = {
     ],
 }
 
+# --- Data Dosen Aktuaria ---
+# Silakan sesuaikan nama dosen dan list makul di bawah dengan excel data Aktuaria Anda.
+DATA_JADWAL_AKT = {
+    "Dosen Aktuaria 1, S.Si., M.Si.": [
+        "Matematika Keuangan (Sebelum UTS)",
+        "Matematika Keuangan (Setelah UTS)",
+        "Teori Risiko (Sebelum UTS)",
+        "Teori Risiko (Setelah UTS)"
+    ],
+    "Dosen Aktuaria 2, S.Si., M.Act.Sc.": [
+        "Statistika Matematika (Sebelum UTS)",
+        "Statistika Matematika (Setelah UTS)",
+        "Model Survival (Sebelum UTS)",
+        "Model Survival (Setelah UTS)"
+    ]
+}
+
+def get_makul_dosen(nama_dosen):
+    """Mencari makul dosen tanpa memedulikan prodi apa (untuk fallback)"""
+    if nama_dosen in DATA_JADWAL_BD: return DATA_JADWAL_BD[nama_dosen]
+    if nama_dosen in DATA_JADWAL_AKT: return DATA_JADWAL_AKT[nama_dosen]
+    return []
+
 def ke_halaman(nama):
     st.session_state['halaman'] = nama
     st.rerun()
@@ -748,8 +533,8 @@ def ke_halaman(nama):
 # ============================================================
 st.markdown("""
     <div class="header-banner">
-        <h1>📝 PRESENSI BISNIS DIGITAL</h1>
-        <p>Beta ver 2.0 — dengan Live Chat Kelas</p>
+        <h1>📝 PRESENSI PERKULIAHAN</h1>
+        <p>Bisnis Digital & Aktuaria — Beta ver 2.0</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -758,11 +543,25 @@ st.markdown("""
 # ============================================================
 if st.session_state['halaman'] == 'landing':
 
-    semua_kelas_aktif = baca_semua_kelas_aktif()
+    # Pilihan Program Studi di Landing Page
+    st.markdown("<h3 style='text-align:center;font-weight:700;'>🎓 Pilih Program Studi</h3>", unsafe_allow_html=True)
+    
+    idx_prodi = 0 if st.session_state['prodi'] == 'Bisnis Digital' else 1
+    prodi_terpilih = st.radio("Program Studi", ["Bisnis Digital", "Aktuaria"], index=idx_prodi, horizontal=True, label_visibility="collapsed")
+    st.session_state['prodi'] = prodi_terpilih
 
-    if semua_kelas_aktif:
-        st.success(f"📍 **{len(semua_kelas_aktif)} Kelas Terbuka Saat Ini:**")
-        for k in semua_kelas_aktif:
+    semua_kelas_aktif = baca_semua_kelas_aktif()
+    
+    # Filter kelas aktif khusus untuk prodi yang dipilih di landing page
+    jadwal_prodi = DATA_JADWAL_AKT if prodi_terpilih == 'Aktuaria' else DATA_JADWAL_BD
+    dosen_valid = list(jadwal_prodi.keys())
+    kelas_landing_aktif = [k for k in semua_kelas_aktif if k['dosen_key'] in dosen_valid]
+
+    st.markdown("<hr style='opacity: 0.2;'>", unsafe_allow_html=True)
+
+    if kelas_landing_aktif:
+        st.success(f"📍 **{len(kelas_landing_aktif)} Kelas Terbuka Saat Ini (Prodi {prodi_terpilih}):**")
+        for k in kelas_landing_aktif:
             nm = k['makul'].rsplit(' (', 1)[0]
             nd = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
             st.markdown(
@@ -771,7 +570,7 @@ if st.session_state['halaman'] == 'landing':
                 unsafe_allow_html=True
             )
     else:
-        st.info("🕒 Belum ada kelas yang dibuka oleh dosen saat ini.")
+        st.info(f"🕒 Belum ada kelas yang dibuka oleh dosen {prodi_terpilih} saat ini.")
 
     st.markdown("<br><h3 style='text-align:center;font-weight:700;'>Pilih Akses Anda</h3><br>", unsafe_allow_html=True)
 
@@ -824,7 +623,6 @@ elif st.session_state['halaman'] == 'mahasiswa':
 
     if st.session_state['sudah_presensi'] and st.session_state['konfirmasi_data']:
         kd = st.session_state['konfirmasi_data']
-
         st.markdown(f"""
             <div class="konfirmasi-box">
                 <h2>✅ Kehadiran Tercatat!</h2>
@@ -836,7 +634,6 @@ elif st.session_state['halaman'] == 'mahasiswa':
                 </div>
             </div>
         """, unsafe_allow_html=True)
-
         total_hadir = hitung_hadir(kd['makul_raw'], kd['pertemuan'])
         st.markdown(f"""
             <div class="counter-box">
@@ -847,16 +644,23 @@ elif st.session_state['halaman'] == 'mahasiswa':
 
         st.info("💡 Form telah dikunci untuk sesi ini. Terima kasih telah hadir!")
 
-        st.markdown("<br>", unsafe_allow_html=True)
         if st.button("💬 Masuk Chat Kelas", use_container_width=True, key="btn_ke_chat_mhs"):
-            # Set nickname otomatis dari nama presensi
             st.session_state['chat_nickname']      = kd['nama']
             st.session_state['chat_kelas_dipilih'] = kd['makul_raw']
             st.session_state['chat_role']          = 'mahasiswa'
             ke_halaman('chat_room')
-
     else:
+        # Pilihan Prodi untuk mencegah mahasiswa salah masuk kelas jika dari link langsung
+        idx_prodi_mhs = 0 if st.session_state['prodi'] == 'Bisnis Digital' else 1
+        prodi_mhs = st.selectbox("🎓 Program Studi Anda:", ["Bisnis Digital", "Aktuaria"], index=idx_prodi_mhs)
+        st.session_state['prodi'] = prodi_mhs
+
         semua_kelas_aktif = baca_semua_kelas_aktif()
+        
+        # Filter dropdown kelas hanya untuk prodi yang dipilih
+        jadwal_mhs = DATA_JADWAL_AKT if prodi_mhs == 'Aktuaria' else DATA_JADWAL_BD
+        dosen_mhs = list(jadwal_mhs.keys())
+        kelas_mhs_aktif = [k for k in semua_kelas_aktif if k['dosen_key'] in dosen_mhs]
 
         st.markdown(f"""
             <div class="clock-container">
@@ -875,16 +679,16 @@ elif st.session_state['halaman'] == 'mahasiswa':
             with col_nim:
                 nim  = st.text_input("NIM", placeholder="Contoh: 220101001")
 
-            if semua_kelas_aktif:
+            if kelas_mhs_aktif:
                 def label_kelas(k):
                     nm = k['makul'].rsplit(' (', 1)[0]
                     nd = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
                     return f"{nm} — {nd} | Pertemuan {k['pertemuan']}"
-                opsi_kelas           = [label_kelas(k) for k in semua_kelas_aktif]
+                opsi_kelas           = [label_kelas(k) for k in kelas_mhs_aktif]
                 pilihan_kelas_label  = st.selectbox("🏫 Pilih Sesi Kelas:", options=opsi_kelas)
             else:
                 pilihan_kelas_label = None
-                st.warning("⚠️ Belum ada kelas aktif. Silakan tunggu instruksi dosen.")
+                st.warning(f"⚠️ Belum ada kelas {prodi_mhs} yang aktif. Silakan tunggu instruksi dosen.")
 
             materi = st.text_area(
                 "Rangkuman Materi Hari Ini (min. 20 karakter)",
@@ -895,7 +699,7 @@ elif st.session_state['halaman'] == 'mahasiswa':
             submit_button = st.form_submit_button(label="KIRIM BUKTI HADIR")
 
         if submit_button:
-            if not semua_kelas_aktif or pilihan_kelas_label is None:
+            if not kelas_mhs_aktif or pilihan_kelas_label is None:
                 st.error("Gagal! Belum ada kelas yang dibuka saat ini.")
             elif not nama.strip():
                 st.error("Nama wajib diisi!")
@@ -905,7 +709,7 @@ elif st.session_state['halaman'] == 'mahasiswa':
                 st.error(f"Rangkuman materi terlalu pendek ({len(materi.strip())} karakter). Minimal 20 karakter.")
             else:
                 idx_pilihan   = opsi_kelas.index(pilihan_kelas_label)
-                kelas_dipilih = semua_kelas_aktif[idx_pilihan]
+                kelas_dipilih = kelas_mhs_aktif[idx_pilihan]
                 tgl           = waktu_sekarang.strftime("%Y-%m-%d")
                 jam           = waktu_sekarang.strftime("%H:%M:%S")
                 try:
@@ -968,15 +772,21 @@ elif st.session_state['halaman'] == 'chat_pilih':
     st.markdown("<h3 style='text-align:center;font-weight:700;'>💬 Ruang Chat Kelas</h3>", unsafe_allow_html=True)
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Jika sudah presensi, nickname sudah ada — langsung pilih kelas
     sudah_presensi = st.session_state.get('sudah_presensi', False)
     konfirmasi     = st.session_state.get('konfirmasi_data', None)
 
-    if not semua_kelas_aktif:
-        st.info("🕒 Belum ada kelas aktif. Chat hanya tersedia saat dosen membuka kelas.")
+    idx_prodi_chat = 0 if st.session_state['prodi'] == 'Bisnis Digital' else 1
+    prodi_chat = st.selectbox("🎓 Program Studi Anda:", ["Bisnis Digital", "Aktuaria"], index=idx_prodi_chat)
+    st.session_state['prodi'] = prodi_chat
+
+    jadwal_chat = DATA_JADWAL_AKT if prodi_chat == 'Aktuaria' else DATA_JADWAL_BD
+    dosen_chat = list(jadwal_chat.keys())
+    kelas_chat_aktif = [k for k in semua_kelas_aktif if k['dosen_key'] in dosen_chat]
+
+    if not kelas_chat_aktif:
+        st.info(f"🕒 Belum ada kelas aktif untuk Prodi {prodi_chat}.")
 
     elif sudah_presensi and konfirmasi:
-        # Sudah presensi — langsung masuk dengan nama dari presensi
         st.success(f"✅ Hadir sebagai **{konfirmasi['nama']}** di kelas **{konfirmasi['makul']}**")
         st.markdown("<br>", unsafe_allow_html=True)
         if st.button("💬 Lanjut ke Ruang Chat", use_container_width=True, key="btn_lanjut_chat"):
@@ -986,7 +796,6 @@ elif st.session_state['halaman'] == 'chat_pilih':
             ke_halaman('chat_room')
 
     else:
-        # Belum presensi — minta nama dulu sebelum chat
         st.markdown("""
             <div style='background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);
                 border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:14px;'>
@@ -1001,7 +810,7 @@ elif st.session_state['halaman'] == 'chat_pilih':
             return f"{nm} | {nd} | Pertemuan {k['pertemuan']}"
 
         with st.form(key="form_chat_masuk"):
-            opsi_kelas_chat  = [label_kelas_chat(k) for k in semua_kelas_aktif]
+            opsi_kelas_chat  = [label_kelas_chat(k) for k in kelas_chat_aktif]
             pilih_kelas_chat = st.selectbox("Pilih Kelas:", options=opsi_kelas_chat)
             nickname_input   = st.text_input("Nama Kamu:", placeholder="Contoh: Budi Santoso")
             st.markdown("<br>", unsafe_allow_html=True)
@@ -1012,7 +821,7 @@ elif st.session_state['halaman'] == 'chat_pilih':
                 st.error("Nama wajib diisi!")
             else:
                 idx       = opsi_kelas_chat.index(pilih_kelas_chat)
-                kelas_obj = semua_kelas_aktif[idx]
+                kelas_obj = kelas_chat_aktif[idx]
                 st.session_state['chat_nickname']      = nickname_input.strip()
                 st.session_state['chat_kelas_dipilih'] = kelas_obj['makul']
                 st.session_state['chat_role']          = 'mahasiswa'
@@ -1022,12 +831,10 @@ elif st.session_state['halaman'] == 'chat_pilih':
 # HALAMAN CHAT — RUANG CHAT
 # ============================================================
 elif st.session_state['halaman'] == 'chat_room':
-
     nickname     = st.session_state.get('chat_nickname', 'Anonim')
     kelas_id     = st.session_state.get('chat_kelas_dipilih', '')
     role         = st.session_state.get('chat_role', 'mahasiswa')
 
-    # Header ruang chat
     nm_kelas = kelas_id.rsplit(' (', 1)[0] if ' (' in kelas_id else kelas_id
     nd_kelas = kelas_id.rsplit(' (', 1)[-1].rstrip(')').split(',')[0] if ' (' in kelas_id else ''
 
@@ -1053,7 +860,6 @@ elif st.session_state['halaman'] == 'chat_room':
 
     st.caption(f"Kamu masuk sebagai: **{nickname}**")
 
-    # Auto-refresh setiap 5 detik
     col_reload, col_info = st.columns([1, 3])
     with col_reload:
         if st.button("🔄 Refresh Pesan", use_container_width=True, key="refresh_chat"):
@@ -1061,10 +867,8 @@ elif st.session_state['halaman'] == 'chat_room':
     with col_info:
         st.caption("💡 Klik Refresh untuk lihat pesan terbaru, atau kirim pesan untuk auto-refresh.")
 
-    # Ambil pesan
     pesan_list = baca_pesan_chat(kelas_id, limit=60)
 
-    # Render bubble chat
     if not pesan_list:
         st.markdown("""
             <div style="text-align:center;padding:40px;opacity:0.4;">
@@ -1073,9 +877,7 @@ elif st.session_state['halaman'] == 'chat_room':
             </div>
         """, unsafe_allow_html=True)
     else:
-        # Buka scroll area
         st.markdown('<div class="chat-scroll-area">', unsafe_allow_html=True)
-
         for msg in pesan_list:
             is_self   = str(msg.get('nickname','')) == nickname
             msg_role  = str(msg.get('role','mahasiswa'))
@@ -1083,11 +885,9 @@ elif st.session_state['halaman'] == 'chat_room':
             ts_raw    = str(msg.get('timestamp',''))
             pesan_txt = str(msg.get('pesan',''))
 
-            # Escape HTML chars dalam pesan agar aman
             import html as html_lib
             pesan_safe = html_lib.escape(pesan_txt)
 
-            # Format timestamp
             try:
                 ts_obj  = datetime.strptime(ts_raw, "%Y-%m-%d %H:%M:%S")
                 ts_disp = ts_obj.strftime("%H:%M")
@@ -1114,26 +914,19 @@ elif st.session_state['halaman'] == 'chat_room':
 </div>"""
             st.markdown(bubble_html, unsafe_allow_html=True)
 
-        # Tutup scroll area
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # Form kirim pesan
     with st.form(key="form_kirim_pesan", clear_on_submit=True):
         col_input, col_send = st.columns([5, 1])
         with col_input:
-            pesan_baru = st.text_input(
-                "Tulis pesan...",
-                placeholder=f"Pesan dari {nickname}...",
-                label_visibility="collapsed"
-            )
+            pesan_baru = st.text_input("Tulis pesan...", placeholder=f"Pesan dari {nickname}...", label_visibility="collapsed")
         with col_send:
             kirim_btn = st.form_submit_button("Kirim")
 
     if kirim_btn:
         if pesan_baru.strip():
             ok = kirim_pesan_chat(kelas_id, nickname, role, pesan_baru.strip())
-            if ok:
-                st.rerun()
+            if ok: st.rerun()
         else:
             st.warning("Pesan tidak boleh kosong.")
 
@@ -1150,8 +943,15 @@ elif st.session_state['halaman'] == 'dosen':
     if not st.session_state.get('dosen_login', False):
         st.markdown("<h3 style='text-align:center;font-weight:800;color:#6366F1;'>Autentikasi Dosen</h3>", unsafe_allow_html=True)
 
+        # Pemilihan Prodi untuk Filter Dosen
+        idx_prodi_dosen = 0 if st.session_state['prodi'] == 'Bisnis Digital' else 1
+        prodi_dosen = st.selectbox("Pilih Program Studi", ["Bisnis Digital", "Aktuaria"], index=idx_prodi_dosen)
+        st.session_state['prodi'] = prodi_dosen
+        
+        jadwal_aktif_login = DATA_JADWAL_AKT if prodi_dosen == 'Aktuaria' else DATA_JADWAL_BD
+
         with st.form(key="form_login_dosen"):
-            pilihan_nama_login = st.selectbox("Nama Dosen", options=list(DATA_JADWAL.keys()))
+            pilihan_nama_login = st.selectbox("Nama Dosen", options=list(jadwal_aktif_login.keys()))
             password_input     = st.text_input("Kode Akses Panel", type="password", placeholder="Masukkan password...")
             st.markdown("<br>", unsafe_allow_html=True)
             tombol_login       = st.form_submit_button("Masuk Panel Dashboard")
@@ -1166,7 +966,7 @@ elif st.session_state['halaman'] == 'dosen':
                 st.error("Kode akses tidak valid!")
 
     else:
-        nama_dosen_aktif = st.session_state.get('nama_dosen_login', list(DATA_JADWAL.keys())[0])
+        nama_dosen_aktif = st.session_state.get('nama_dosen_login')
         dosen_key        = nama_dosen_aktif
 
         col_title, col_logout = st.columns([4, 1])
@@ -1178,7 +978,14 @@ elif st.session_state['halaman'] == 'dosen':
                 st.session_state['nama_dosen_login'] = None
                 ke_halaman('landing')
 
-        kelas_aktif_sekarang = baca_semua_kelas_aktif()
+        semua_kelas_aktif = baca_semua_kelas_aktif()
+        
+        # Cari Prodi dosen dari nama dosennya untuk tab monitor
+        prodi_dsn_sekarang = 'Aktuaria' if nama_dosen_aktif in DATA_JADWAL_AKT else 'Bisnis Digital'
+        jadwal_dsn_sekarang = DATA_JADWAL_AKT if prodi_dsn_sekarang == 'Aktuaria' else DATA_JADWAL_BD
+        dosen_valid = list(jadwal_dsn_sekarang.keys())
+        kelas_aktif_prodi_ini = [k for k in semua_kelas_aktif if k['dosen_key'] in dosen_valid]
+
         tab1, tab2, tab3, tab4 = st.tabs(["🚀 Buka Kelas & QR", "📋 Monitor Kelas Aktif", "📂 Arsip & Histori", "💬 Chat Kelas"])
 
         # ─────────────────────────────────────────
@@ -1186,9 +993,9 @@ elif st.session_state['halaman'] == 'dosen':
         # ─────────────────────────────────────────
         with tab1:
             st.markdown("#### Aktivasi Perkuliahan")
-            st.caption(f"Login sebagai: **{nama_dosen_aktif}**")
+            st.caption(f"Login sebagai: **{nama_dosen_aktif}** (Prodi {prodi_dsn_sekarang})")
 
-            daftar_makul  = DATA_JADWAL[nama_dosen_aktif]
+            daftar_makul  = get_makul_dosen(nama_dosen_aktif)
             pilihan_makul = st.selectbox("Nama Mata Kuliah", options=daftar_makul)
             input_makul_gabungan = f"{pilihan_makul} ({nama_dosen_aktif})"
 
@@ -1246,20 +1053,20 @@ elif st.session_state['halaman'] == 'dosen':
                     st.warning("Masukkan URL terlebih dahulu.")
 
         # ─────────────────────────────────────────
-        # TAB 2 — MONITOR KELAS AKTIF
+        # TAB 2 — MONITOR KELAS AKTIF (KHUSUS PRODI DOSEN INI)
         # ─────────────────────────────────────────
         with tab2:
             col_m, col_r = st.columns([4, 1])
             with col_m:
-                st.metric("Total Kelas Berjalan (Global)", f"{len(kelas_aktif_sekarang)} Kelas")
+                st.metric(f"Total Kelas Berjalan (Prodi {prodi_dsn_sekarang})", f"{len(kelas_aktif_prodi_ini)} Kelas")
             with col_r:
                 st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
                 if st.button("🔄 Reload", use_container_width=True, key="reload_mon"):
                     st.rerun()
             st.markdown("---")
 
-            if kelas_aktif_sekarang:
-                for idx_k, k in enumerate(kelas_aktif_sekarang):
+            if kelas_aktif_prodi_ini:
+                for idx_k, k in enumerate(kelas_aktif_prodi_ini):
                     nm = k['makul'].rsplit(' (', 1)[0]
                     nd = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
                     with st.container(border=True):
@@ -1304,14 +1111,14 @@ elif st.session_state['halaman'] == 'dosen':
                             except Exception as e:
                                 st.error(f"Error: {e}")
             else:
-                st.caption("Tidak ada kelas aktif saat ini.")
+                st.caption(f"Tidak ada kelas aktif saat ini untuk Prodi {prodi_dsn_sekarang}.")
 
         # ─────────────────────────────────────────
         # TAB 3 — ARSIP & HISTORI
         # ─────────────────────────────────────────
         with tab3:
             st.markdown("#### Pusat Data Kehadiran")
-            makul_opsi    = DATA_JADWAL[nama_dosen_aktif]
+            makul_opsi    = get_makul_dosen(nama_dosen_aktif)
             pilih_makul_a = st.selectbox("Pilih Mata Kuliah:", options=makul_opsi, key="arsip_makul")
             makul_gabung  = f"{pilih_makul_a} ({nama_dosen_aktif})"
 
@@ -1442,19 +1249,19 @@ elif st.session_state['halaman'] == 'dosen':
             st.markdown("#### 💬 Live Chat Kelas — Panel Dosen")
             st.caption("Masuk sebagai dosen ke ruang chat kelas aktif.")
 
-            if not kelas_aktif_sekarang:
+            if not kelas_aktif_prodi_ini:
                 st.info("Belum ada kelas aktif. Buka kelas dahulu di Tab 1.")
             else:
                 def label_kelas_d(k):
                     nm = k['makul'].rsplit(' (', 1)[0]
                     return f"{nm} | Pertemuan {k['pertemuan']}"
 
-                opsi_chat_dosen = [label_kelas_d(k) for k in kelas_aktif_sekarang]
+                opsi_chat_dosen = [label_kelas_d(k) for k in kelas_aktif_prodi_ini]
                 pilih_chat_dos  = st.selectbox("Pilih Kelas Chat:", options=opsi_chat_dosen, key="chat_dos_sel")
 
                 if st.button("Masuk Ruang Chat Kelas Ini 💬", use_container_width=True, key="dos_masuk_chat"):
                     idx_d = opsi_chat_dosen.index(pilih_chat_dos)
-                    kelas_obj_d = kelas_aktif_sekarang[idx_d]
+                    kelas_obj_d = kelas_aktif_prodi_ini[idx_d]
                     st.session_state['chat_nickname']      = f"[Dosen] {nama_dosen_aktif.split(',')[0]}"
                     st.session_state['chat_kelas_dipilih'] = kelas_obj_d['makul']
                     st.session_state['chat_role']          = 'dosen'
