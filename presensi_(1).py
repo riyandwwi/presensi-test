@@ -8,6 +8,7 @@ from google.oauth2.service_account import Credentials
 import pytz
 import hashlib
 import time
+import json
 
 # ============================================================
 # ZONA WAKTU & SESSION STATE
@@ -22,7 +23,10 @@ DEFAULTS = {
     'nama_dosen_login':  None,
     'nim_terverifikasi': None,
     'nama_terverifikasi':None,
-    'konfirmasi_data':   None,   # simpan data konfirmasi sukses mahasiswa
+    'konfirmasi_data':   None,
+    'chat_nickname':     None,
+    'chat_kelas_dipilih': None,
+    'chat_role':         'mahasiswa',  # 'mahasiswa' atau 'dosen'
 }
 for k, v in DEFAULTS.items():
     if k not in st.session_state:
@@ -34,78 +38,226 @@ for k, v in DEFAULTS.items():
 st.set_page_config(page_title="Presensi Bisnis Digital", page_icon="📝", layout="centered")
 
 # ============================================================
-# CSS
+# CSS — DARK MODE COMPATIBLE
 # ============================================================
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; color: #1E293B; }
-.stApp { background: linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%); }
+
+html, body, [class*="css"] {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
 header {visibility:hidden;} footer {visibility:hidden;} #MainMenu {visibility:hidden;}
 
+/* ── Adaptive Background ── */
+.stApp {
+    background: var(--background-color);
+}
+
+/* ── Header Banner ── */
 .header-banner {
     background: linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%);
     padding: 25px; border-radius: 16px; color: white;
     text-align: center; margin-bottom: 25px;
-    box-shadow: 0 10px 20px rgba(79,70,229,0.15);
+    box-shadow: 0 10px 20px rgba(79,70,229,0.25);
 }
 .header-banner h1 { color:white !important; font-weight:800; font-size:28px; margin-bottom:5px; }
 .header-banner p  { color:#E0E7FF !important; font-size:15px; opacity:0.9; margin:0; }
 
+/* ── Form Wrapper ── */
 div[data-testid="stForm"] {
-    background: rgba(255,255,255,0.95); border: 1px solid #E2E8F0;
+    background: var(--secondary-background-color) !important;
+    border: 1px solid rgba(128,128,128,0.2) !important;
     border-radius: 20px !important; padding: 35px !important;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.03) !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
 }
+
+/* ── Input Fields — Dark Mode Safe ── */
 div[data-testid="stTextInput"] input,
-div[data-testid="stTextArea"] textarea {
-    background-color: #F8FAFC !important; border: 1.5px solid #CBD5E1 !important;
-    border-radius: 10px !important; padding: 12px 16px !important;
-    font-size: 15px !important; transition: all 0.3s ease !important;
+div[data-testid="stTextArea"] textarea,
+div[data-testid="stSelectbox"] > div > div {
+    background-color: var(--secondary-background-color) !important;
+    color: var(--text-color) !important;
+    border: 1.5px solid rgba(128,128,128,0.35) !important;
+    border-radius: 10px !important;
+    padding: 12px 16px !important;
+    font-size: 15px !important;
+    transition: all 0.3s ease !important;
 }
 div[data-testid="stTextInput"] input:focus,
 div[data-testid="stTextArea"] textarea:focus {
-    border-color: #4F46E5 !important; background-color: #FFFFFF !important;
-    box-shadow: 0 0 0 4px rgba(79,70,229,0.1) !important;
+    border-color: #6366F1 !important;
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.15) !important;
 }
+
+/* ── Labels ── */
+div[data-testid="stTextInput"] label,
+div[data-testid="stTextArea"] label,
+div[data-testid="stSelectbox"] label {
+    color: var(--text-color) !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+}
+
+/* ── Buttons ── */
 button[kind="formSubmit"] {
     background: linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%) !important;
     color: white !important; border: none !important; border-radius: 12px !important;
     padding: 12px 24px !important; font-size: 16px !important; font-weight: 700 !important;
     width: 100% !important; box-shadow: 0 4px 15px rgba(79,70,229,0.3) !important;
+    transition: all 0.2s !important;
 }
+button[kind="formSubmit"]:hover {
+    box-shadow: 0 6px 20px rgba(79,70,229,0.45) !important;
+    transform: translateY(-1px) !important;
+}
+
+/* ── Clock Box ── */
 .clock-container {
-    background-color: #FFFBEB; border: 1px solid #FDE68A; border-radius: 12px;
+    background: rgba(251,191,36,0.12);
+    border: 1px solid rgba(251,191,36,0.4);
+    border-radius: 12px;
     padding: 12px; text-align: center; margin-bottom: 20px;
-    color: #B45309; font-weight: 600; font-size: 14px;
+    color: #D97706; font-weight: 600; font-size: 14px;
 }
+
+/* ── Kelas Badge ── */
 .kelas-badge {
-    background: white; border-left: 4px solid #4F46E5; border-radius: 8px;
+    background: var(--secondary-background-color);
+    border-left: 4px solid #6366F1; border-radius: 8px;
     padding: 12px 16px; margin-bottom: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.02); color: #334155;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06);
+    color: var(--text-color);
 }
+
+/* ── Konfirmasi Box ── */
 .konfirmasi-box {
-    background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
-    border: 2px solid #10B981; border-radius: 20px;
+    background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.06) 100%);
+    border: 2px solid rgba(16,185,129,0.5); border-radius: 20px;
     padding: 30px; text-align: center; margin: 10px 0 20px 0;
 }
-.konfirmasi-box h2 { color: #065F46 !important; font-size: 22px; margin-bottom: 8px; }
-.konfirmasi-box .detail { color: #047857; font-size: 15px; line-height: 1.8; }
+.konfirmasi-box h2 { color: #10B981 !important; font-size: 22px; margin-bottom: 8px; }
+.konfirmasi-box .detail { color: var(--text-color); opacity: 0.85; font-size: 15px; line-height: 1.8; }
+
+/* ── Counter Box ── */
 .counter-box {
-    background: white; border-radius: 12px; padding: 14px 20px;
-    text-align: center; border: 1px solid #E2E8F0;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04); margin-top: 10px;
+    background: var(--secondary-background-color);
+    border-radius: 12px; padding: 14px 20px;
+    text-align: center; border: 1px solid rgba(128,128,128,0.2);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-top: 10px;
 }
-.counter-box .angka { font-size: 32px; font-weight: 800; color: #4F46E5; }
-.counter-box .label { font-size: 13px; color: #64748B; margin-top: 2px; }
+.counter-box .angka { font-size: 32px; font-weight: 800; color: #6366F1; }
+.counter-box .label { font-size: 13px; color: var(--text-color); opacity: 0.6; margin-top: 2px; }
+
+/* ── Histori Container ── */
 .histori-container {
-    background-color: #FFFFFF; border: 1px solid #E2E8F0;
+    background-color: var(--secondary-background-color);
+    border: 1px solid rgba(128,128,128,0.2);
     border-left: 4px solid #10B981; border-radius: 8px;
     padding: 15px; margin-bottom: 12px;
+    color: var(--text-color);
 }
+
+/* ── Token Expired ── */
 .token-expired {
-    background: #FEF2F2; border: 2px solid #FECACA; border-radius: 16px;
-    padding: 24px; text-align: center; color: #DC2626;
+    background: rgba(220,38,38,0.1); border: 2px solid rgba(220,38,38,0.3);
+    border-radius: 16px; padding: 24px; text-align: center; color: #EF4444;
+}
+
+/* ── Pilih Akses Card ── */
+.akses-card {
+    background: var(--secondary-background-color);
+    border-radius: 16px; padding: 30px 20px;
+    text-align: center;
+    border: 1.5px solid rgba(128,128,128,0.2);
+    transition: all 0.2s;
+}
+.akses-card:hover { border-color: #6366F1; }
+
+/* ── Chat Bubble Styles ── */
+.chat-bubble-wrapper {
+    display: flex;
+    margin-bottom: 12px;
+    align-items: flex-end;
+    gap: 8px;
+}
+.chat-bubble-wrapper.self {
+    flex-direction: row-reverse;
+}
+.chat-avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+    font-weight: 700;
+}
+.chat-avatar.mhs { background: rgba(99,102,241,0.15); color: #6366F1; }
+.chat-avatar.dos  { background: rgba(16,185,129,0.15); color: #10B981; }
+.chat-bubble {
+    max-width: 72%;
+    padding: 10px 14px;
+    border-radius: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+    word-break: break-word;
+}
+.chat-bubble.other {
+    background: var(--secondary-background-color);
+    border: 1px solid rgba(128,128,128,0.2);
+    color: var(--text-color);
+    border-bottom-left-radius: 4px;
+}
+.chat-bubble.self {
+    background: linear-gradient(135deg, #4F46E5, #6366F1);
+    color: white;
+    border-bottom-right-radius: 4px;
+}
+.chat-meta {
+    font-size: 11px;
+    color: var(--text-color);
+    opacity: 0.45;
+    margin-top: 4px;
+    display: block;
+}
+.chat-meta.self { text-align: right; }
+.chat-scroll-area {
+    max-height: 420px;
+    overflow-y: auto;
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(128,128,128,0.2);
+    background: var(--background-color);
+    margin-bottom: 16px;
+}
+.chat-room-header {
+    background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%);
+    padding: 14px 18px; border-radius: 12px;
+    color: white; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 10px;
+}
+.online-dot {
+    width: 10px; height: 10px; background: #4ADE80;
+    border-radius: 50%; display: inline-block;
+    box-shadow: 0 0 6px #4ADE80;
+}
+.chat-dosen-badge {
+    background: rgba(16,185,129,0.15);
+    color: #10B981;
+    border: 1px solid rgba(16,185,129,0.3);
+    border-radius: 20px;
+    padding: 2px 10px;
+    font-size: 11px;
+    font-weight: 700;
+}
+.nav-chat-btn {
+    background: linear-gradient(135deg, #7C3AED 0%, #6366F1 100%);
+    color: white !important;
+    border: none; border-radius: 10px;
+    padding: 8px 18px;
+    font-weight: 700; font-size: 14px;
+    cursor: pointer; width: 100%;
+    margin-top: 10px;
+    box-shadow: 0 4px 12px rgba(99,102,241,0.3);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -124,6 +276,7 @@ def get_sheet():
     return client.open_by_key(SHEET_ID)
 
 STATUS_SHEET = "STATUS_KELAS"
+CHAT_SHEET   = "CHAT_PESAN"
 
 def baca_semua_kelas_aktif():
     try:
@@ -202,7 +355,6 @@ def tutup_kelas_by_makul(makul):
     return False
 
 def hapus_entri_presensi(nama_ws, nim, pertemuan):
-    """Hapus baris presensi berdasarkan NIM + pertemuan."""
     try:
         sheet = get_sheet()
         ws    = sheet.worksheet(nama_ws)
@@ -234,7 +386,6 @@ def get_or_create_worksheet(sheet, title):
 
 def simpan_ke_sheets(data: dict):
     sheet   = get_sheet()
-    # Nama worksheet: maks 31 karakter (batasan Google Sheets), pakai hash suffix untuk uniqueness
     raw     = data["Mata Kuliah"]
     safe    = raw.replace("/","-").replace(":","-").replace("\\","-")
     if len(safe) > 28:
@@ -250,7 +401,6 @@ def simpan_ke_sheets(data: dict):
     ])
 
 def hitung_hadir(makul, pertemuan):
-    """Hitung jumlah mahasiswa yang sudah hadir di kelas ini."""
     try:
         sheet  = get_sheet()
         raw    = makul
@@ -270,6 +420,43 @@ def generate_qr(url):
     qr.make(fit=True)
     img = qr.make_image(fill_color="#1E293B", back_color="#FFFFFF")
     buf = BytesIO(); img.save(buf, format="PNG"); return buf.getvalue()
+
+# ============================================================
+# CHAT FUNCTIONS
+# ============================================================
+def get_or_create_chat_sheet():
+    try:
+        sheet = get_sheet()
+        try:
+            return sheet.worksheet(CHAT_SHEET)
+        except gspread.exceptions.WorksheetNotFound:
+            ws = sheet.add_worksheet(title=CHAT_SHEET, rows="2000", cols="6")
+            ws.append_row(["timestamp","kelas","nickname","role","pesan"])
+            return ws
+    except Exception as e:
+        st.error(f"Gagal membuat chat sheet: {e}")
+        return None
+
+def kirim_pesan_chat(kelas, nickname, role, pesan):
+    try:
+        ws = get_or_create_chat_sheet()
+        if ws is None: return False
+        ts = datetime.now(tz_wib).strftime("%Y-%m-%d %H:%M:%S")
+        ws.append_row([ts, kelas, nickname, role, pesan])
+        return True
+    except Exception as e:
+        st.error(f"Gagal kirim pesan: {e}")
+        return False
+
+def baca_pesan_chat(kelas, limit=50):
+    try:
+        ws   = get_or_create_chat_sheet()
+        if ws is None: return []
+        data = ws.get_all_records()
+        msgs = [r for r in data if str(r.get("kelas","")) == str(kelas)]
+        return msgs[-limit:]
+    except Exception:
+        return []
 
 # ============================================================
 # DATA JADWAL DOSEN
@@ -338,8 +525,8 @@ def ke_halaman(nama):
 # ============================================================
 st.markdown("""
     <div class="header-banner">
-        <h1>PRESENSI BISNIS DIGITAL</h1>
-        <p>Beta ver 1.0</p>
+        <h1>📝 PRESENSI BISNIS DIGITAL</h1>
+        <p>Beta ver 2.0 — dengan Live Chat Kelas</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -357,36 +544,48 @@ if st.session_state['halaman'] == 'landing':
             nd = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
             st.markdown(
                 f"<div class='kelas-badge'>📚 <b>{nm}</b><br>"
-                f"<span style='color:#64748B;font-size:13px;'>👨‍🏫 {nd} &nbsp;|&nbsp; Pertemuan {k['pertemuan']}</span></div>",
+                f"<span style='opacity:0.6;font-size:13px;'>👨‍🏫 {nd} &nbsp;|&nbsp; Pertemuan {k['pertemuan']}</span></div>",
                 unsafe_allow_html=True
             )
     else:
         st.info("🕒 Belum ada kelas yang dibuka oleh dosen saat ini.")
 
-    st.markdown("<br><h3 style='text-align:center;color:#1E293B;font-weight:700;'>Pilih Akses Anda</h3><br>", unsafe_allow_html=True)
-    col_mhs, col_dos = st.columns(2)
+    st.markdown("<br><h3 style='text-align:center;font-weight:700;'>Pilih Akses Anda</h3><br>", unsafe_allow_html=True)
+
+    col_mhs, col_dos, col_chat = st.columns(3)
+
     with col_mhs:
         st.markdown("""
-            <div style='background:white;border-radius:16px;padding:30px 20px;
-                text-align:center;border:1.5px solid #E2E8F0;'>
-                <div style='font-size:45px;'>🧑‍🎓</div>
-                <div style='font-weight:700;font-size:18px;margin-top:10px;'>Mahasiswa</div>
-                <div style='font-size:13px;color:#64748B;margin-top:6px;'>Isi daftar hadir perkuliahan</div>
+            <div class='akses-card'>
+                <div style='font-size:40px;'>🧑‍🎓</div>
+                <div style='font-weight:700;font-size:17px;margin-top:10px;'>Mahasiswa</div>
+                <div style='font-size:12px;opacity:0.6;margin-top:6px;'>Isi daftar hadir</div>
             </div>""", unsafe_allow_html=True)
         st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
         if st.button("Masuk Mahasiswa", use_container_width=True, key="btn_mhs"):
             ke_halaman('mahasiswa')
+
     with col_dos:
         st.markdown("""
-            <div style='background:white;border-radius:16px;padding:30px 20px;
-                text-align:center;border:1.5px solid #E2E8F0;'>
-                <div style='font-size:45px;'>👨‍🏫</div>
-                <div style='font-weight:700;font-size:18px;margin-top:10px;'>Dosen</div>
-                <div style='font-size:13px;color:#64748B;margin-top:6px;'>Kelola kelas & rekap data</div>
+            <div class='akses-card'>
+                <div style='font-size:40px;'>👨‍🏫</div>
+                <div style='font-weight:700;font-size:17px;margin-top:10px;'>Dosen</div>
+                <div style='font-size:12px;opacity:0.6;margin-top:6px;'>Kelola kelas & rekap</div>
             </div>""", unsafe_allow_html=True)
         st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
         if st.button("Masuk Dosen", use_container_width=True, key="btn_dos"):
             ke_halaman('dosen')
+
+    with col_chat:
+        st.markdown("""
+            <div class='akses-card' style='border-color:rgba(99,102,241,0.4);'>
+                <div style='font-size:40px;'>💬</div>
+                <div style='font-weight:700;font-size:17px;margin-top:10px;'>Live Chat</div>
+                <div style='font-size:12px;opacity:0.6;margin-top:6px;'>Chat kelas realtime</div>
+            </div>""", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
+        if st.button("Masuk Chat", use_container_width=True, key="btn_chat"):
+            ke_halaman('chat_pilih')
 
 # ============================================================
 # HALAMAN MAHASISWA
@@ -400,7 +599,6 @@ elif st.session_state['halaman'] == 'mahasiswa':
             st.session_state['konfirmasi_data']   = None
             ke_halaman('landing')
 
-    # ── Tampilan setelah sukses submit ──
     if st.session_state['sudah_presensi'] and st.session_state['konfirmasi_data']:
         kd = st.session_state['konfirmasi_data']
 
@@ -416,7 +614,6 @@ elif st.session_state['halaman'] == 'mahasiswa':
             </div>
         """, unsafe_allow_html=True)
 
-        # Counter mahasiswa yang sudah hadir
         total_hadir = hitung_hadir(kd['makul_raw'], kd['pertemuan'])
         st.markdown(f"""
             <div class="counter-box">
@@ -427,26 +624,29 @@ elif st.session_state['halaman'] == 'mahasiswa':
 
         st.info("💡 Form telah dikunci untuk sesi ini. Terima kasih telah hadir!")
 
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("💬 Masuk Chat Kelas", use_container_width=True, key="btn_ke_chat_mhs"):
+            ke_halaman('chat_pilih')
+
     else:
-        # ── Form presensi ──
         semua_kelas_aktif = baca_semua_kelas_aktif()
 
         st.markdown(f"""
             <div class="clock-container">
                 🕒 Tanggal: <b>{waktu_sekarang.strftime('%d-%m-%Y')}</b> &nbsp;|&nbsp;
                 Jam: <b>{waktu_sekarang.strftime('%H:%M:%S')} WIB</b>
-                <br><small style="color:#D97706;font-weight:normal;">Waktu server tercatat otomatis.</small>
+                <br><small style="opacity:0.7;font-weight:normal;">Waktu server tercatat otomatis.</small>
             </div>
         """, unsafe_allow_html=True)
 
         with st.form(key="form_presensi", clear_on_submit=False):
-            st.markdown("<h4 style='text-align:center;color:#1E293B;margin-bottom:20px;'>📝 Form Kehadiran</h4>", unsafe_allow_html=True)
+            st.markdown("<h4 style='text-align:center;margin-bottom:20px;'>📝 Form Kehadiran</h4>", unsafe_allow_html=True)
 
             col_nama, col_nim = st.columns(2)
             with col_nama:
-                nama = st.text_input("Nama Lengkap", placeholder="")
+                nama = st.text_input("Nama Lengkap", placeholder="Nama lengkap kamu")
             with col_nim:
-                nim  = st.text_input("NIM", placeholder="Contoh: ")
+                nim  = st.text_input("NIM", placeholder="Contoh: 220101001")
 
             if semua_kelas_aktif:
                 def label_kelas(k):
@@ -491,7 +691,6 @@ elif st.session_state['halaman'] == 'mahasiswa':
                     ws      = get_or_create_worksheet(sheet, safe)
                     records = ws.get_all_records()
 
-                    # Cek duplikasi
                     sudah = any(
                         str(r.get('NIM','')).strip() == nim.strip() and
                         str(r.get('Pertemuan Ke','')) == str(kelas_dipilih["pertemuan"])
@@ -528,6 +727,187 @@ elif st.session_state['halaman'] == 'mahasiswa':
                     st.error(f"Gagal menghubungi database: {e}")
 
 # ============================================================
+# HALAMAN CHAT — PILIH KELAS & NICKNAME
+# ============================================================
+elif st.session_state['halaman'] == 'chat_pilih':
+
+    col_back, _ = st.columns([1, 4])
+    with col_back:
+        if st.button("← Kembali", key="back_chat_pilih"):
+            ke_halaman('landing')
+
+    semua_kelas_aktif = baca_semua_kelas_aktif()
+
+    st.markdown("<h3 style='text-align:center;font-weight:700;'>💬 Masuk Ruang Chat Kelas</h3>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align:center;opacity:0.6;font-size:14px;'>Tidak perlu login. Pilih kelas aktif dan isi nickname kamu.</p>", unsafe_allow_html=True)
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    if not semua_kelas_aktif:
+        st.info("🕒 Belum ada kelas aktif. Chat hanya tersedia saat dosen membuka kelas.")
+    else:
+        with st.form(key="form_chat_masuk"):
+            # Pilih Role
+            role_dipilih = st.radio("Saya adalah:", ["Mahasiswa 🧑‍🎓", "Dosen 👨‍🏫"], horizontal=True)
+
+            # Pilih Kelas
+            def label_kelas_chat(k):
+                nm = k['makul'].rsplit(' (', 1)[0]
+                nd = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
+                return f"{nm} | {nd} | Pertemuan {k['pertemuan']}"
+
+            opsi_kelas_chat = [label_kelas_chat(k) for k in semua_kelas_aktif]
+            pilih_kelas_chat = st.selectbox("Pilih Kelas yang Ingin Dimasuki:", options=opsi_kelas_chat)
+
+            # Nickname
+            nickname_input = st.text_input("Nickname / Nama Panggilan:", placeholder="Contoh: Budi atau Pak Riyan")
+
+            # Jika dosen, perlu kode akses
+            kode_dosen_input = ""
+            role_clean = "mahasiswa"
+            if "Dosen" in role_dipilih:
+                kode_dosen_input = st.text_input("Kode Akses Dosen:", type="password", placeholder="Masukkan kode dosen")
+                role_clean = "dosen"
+            else:
+                role_clean = "mahasiswa"
+
+            st.markdown("<br>", unsafe_allow_html=True)
+            masuk_chat_btn = st.form_submit_button("Masuk Ruang Chat 💬")
+
+        if masuk_chat_btn:
+            if not nickname_input.strip():
+                st.error("Nickname wajib diisi!")
+            elif role_clean == "dosen":
+                PASSWORD_DOSEN = st.secrets.get("password_dosen", "dosen123")
+                if kode_dosen_input != PASSWORD_DOSEN:
+                    st.error("❌ Kode akses dosen tidak valid!")
+                else:
+                    idx = opsi_kelas_chat.index(pilih_kelas_chat)
+                    kelas_obj = semua_kelas_aktif[idx]
+                    st.session_state['chat_nickname'] = f"[Dosen] {nickname_input.strip()}"
+                    st.session_state['chat_kelas_dipilih'] = kelas_obj['makul']
+                    st.session_state['chat_role'] = 'dosen'
+                    ke_halaman('chat_room')
+            else:
+                idx = opsi_kelas_chat.index(pilih_kelas_chat)
+                kelas_obj = semua_kelas_aktif[idx]
+                st.session_state['chat_nickname'] = nickname_input.strip()
+                st.session_state['chat_kelas_dipilih'] = kelas_obj['makul']
+                st.session_state['chat_role'] = 'mahasiswa'
+                ke_halaman('chat_room')
+
+# ============================================================
+# HALAMAN CHAT — RUANG CHAT
+# ============================================================
+elif st.session_state['halaman'] == 'chat_room':
+
+    nickname     = st.session_state.get('chat_nickname', 'Anonim')
+    kelas_id     = st.session_state.get('chat_kelas_dipilih', '')
+    role         = st.session_state.get('chat_role', 'mahasiswa')
+
+    # Header ruang chat
+    nm_kelas = kelas_id.rsplit(' (', 1)[0] if ' (' in kelas_id else kelas_id
+    nd_kelas = kelas_id.rsplit(' (', 1)[-1].rstrip(')').split(',')[0] if ' (' in kelas_id else ''
+
+    col_back2, _ = st.columns([1, 4])
+    with col_back2:
+        if st.button("← Keluar Chat", key="back_chat_room"):
+            st.session_state['chat_nickname']      = None
+            st.session_state['chat_kelas_dipilih'] = None
+            ke_halaman('landing')
+
+    st.markdown(f"""
+        <div class="chat-room-header">
+            <span class="online-dot"></span>
+            <div>
+                <div style="font-weight:800;font-size:16px;">💬 {nm_kelas}</div>
+                <div style="font-size:12px;opacity:0.8;">👨‍🏫 {nd_kelas} &nbsp;·&nbsp; Live Chat</div>
+            </div>
+            <div style="margin-left:auto;">
+                {'<span class="chat-dosen-badge">DOSEN</span>' if role == 'dosen' else ''}
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.caption(f"Kamu masuk sebagai: **{nickname}**")
+
+    # Auto-refresh setiap 5 detik
+    col_reload, col_info = st.columns([1, 3])
+    with col_reload:
+        if st.button("🔄 Refresh Pesan", use_container_width=True, key="refresh_chat"):
+            st.rerun()
+    with col_info:
+        st.caption("💡 Klik Refresh untuk lihat pesan terbaru, atau kirim pesan untuk auto-refresh.")
+
+    # Ambil pesan
+    pesan_list = baca_pesan_chat(kelas_id, limit=60)
+
+    # Render bubble chat
+    if not pesan_list:
+        st.markdown("""
+            <div style="text-align:center;padding:40px;opacity:0.4;">
+                <div style="font-size:40px;">💬</div>
+                <div style="margin-top:10px;font-size:14px;">Belum ada pesan. Jadilah yang pertama!</div>
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        bubbles_html = '<div class="chat-scroll-area">'
+        for msg in pesan_list:
+            is_self   = str(msg.get('nickname','')) == nickname
+            msg_role  = str(msg.get('role','mahasiswa'))
+            nick      = str(msg.get('nickname','?'))
+            ts_raw    = str(msg.get('timestamp',''))
+            pesan_txt = str(msg.get('pesan',''))
+
+            # Format timestamp
+            try:
+                ts_obj  = datetime.strptime(ts_raw, "%Y-%m-%d %H:%M:%S")
+                ts_disp = ts_obj.strftime("%H:%M")
+            except Exception:
+                ts_disp = ts_raw[-5:] if len(ts_raw) >= 5 else ts_raw
+
+            avatar_class = "dos" if msg_role == "dosen" else "mhs"
+            avatar_emoji = "👨‍🏫" if msg_role == "dosen" else nick[0].upper() if nick else "?"
+            wrapper_cls  = "self" if is_self else ""
+            bubble_cls   = "self" if is_self else "other"
+            meta_cls     = "self" if is_self else ""
+
+            dosen_tag = '<span class="chat-dosen-badge" style="margin-left:4px;font-size:10px;">DOSEN</span>' if msg_role == "dosen" else ""
+            nick_disp = nick if not is_self else "Kamu"
+
+            bubbles_html += f"""
+            <div class="chat-bubble-wrapper {wrapper_cls}">
+                <div class="chat-avatar {avatar_class}">{avatar_emoji}</div>
+                <div>
+                    <div style="font-size:11px;opacity:0.5;margin-bottom:3px;{'text-align:right;' if is_self else ''}">{nick_disp}{dosen_tag}</div>
+                    <div class="chat-bubble {bubble_cls}">{pesan_txt}</div>
+                    <span class="chat-meta {meta_cls}">{ts_disp} WIB</span>
+                </div>
+            </div>
+            """
+        bubbles_html += '</div>'
+        st.markdown(bubbles_html, unsafe_allow_html=True)
+
+    # Form kirim pesan
+    with st.form(key="form_kirim_pesan", clear_on_submit=True):
+        col_input, col_send = st.columns([5, 1])
+        with col_input:
+            pesan_baru = st.text_input(
+                "Tulis pesan...",
+                placeholder=f"Pesan dari {nickname}...",
+                label_visibility="collapsed"
+            )
+        with col_send:
+            kirim_btn = st.form_submit_button("Kirim")
+
+    if kirim_btn:
+        if pesan_baru.strip():
+            ok = kirim_pesan_chat(kelas_id, nickname, role, pesan_baru.strip())
+            if ok:
+                st.rerun()
+        else:
+            st.warning("Pesan tidak boleh kosong.")
+
+# ============================================================
 # HALAMAN DOSEN
 # ============================================================
 elif st.session_state['halaman'] == 'dosen':
@@ -538,11 +918,9 @@ elif st.session_state['halaman'] == 'dosen':
             ke_halaman('landing')
 
     if not st.session_state.get('dosen_login', False):
-        # ── Form Login Dosen ──
-        st.markdown("<h3 style='color:#4F46E5;text-align:center;'>Autentikasi Dosen</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align:center;font-weight:800;color:#6366F1;'>Autentikasi Dosen</h3>", unsafe_allow_html=True)
 
         with st.form(key="form_login_dosen"):
-            # Pilih nama dosen SEBELUM masukkan password
             pilihan_nama_login = st.selectbox("Nama Dosen", options=list(DATA_JADWAL.keys()))
             password_input     = st.text_input("Kode Akses Panel", type="password", placeholder="Masukkan password...")
             st.markdown("<br>", unsafe_allow_html=True)
@@ -558,7 +936,6 @@ elif st.session_state['halaman'] == 'dosen':
                 st.error("Kode akses tidak valid!")
 
     else:
-        # ── Dashboard Dosen ──
         nama_dosen_aktif = st.session_state.get('nama_dosen_login', list(DATA_JADWAL.keys())[0])
         dosen_key        = nama_dosen_aktif
 
@@ -572,7 +949,7 @@ elif st.session_state['halaman'] == 'dosen':
                 ke_halaman('landing')
 
         kelas_aktif_sekarang = baca_semua_kelas_aktif()
-        tab1, tab2, tab3 = st.tabs(["🚀 Buka Kelas & QR", "📋 Monitor Kelas Aktif", "📂 Arsip & Histori"])
+        tab1, tab2, tab3, tab4 = st.tabs(["🚀 Buka Kelas & QR", "📋 Monitor Kelas Aktif", "📂 Arsip & Histori", "💬 Chat Kelas"])
 
         # ─────────────────────────────────────────
         # TAB 1 — BUKA KELAS & QR
@@ -595,12 +972,10 @@ elif st.session_state['halaman'] == 'dosen':
             with st.container(border=True):
                 col1, col2 = st.columns(2)
                 with col1:
-                    # Semester dropdown 1-8
                     opt_smt       = [str(i) for i in range(1, 9)]
                     default_smt   = status_dosen["semester"] if status_dosen["semester"] in opt_smt else opt_smt[0]
                     input_semester = st.selectbox("Semester:", options=opt_smt, index=opt_smt.index(default_smt))
                 with col2:
-                    # Pertemuan dropdown 1-16
                     opt_prt       = [str(i) for i in range(1, 17)]
                     default_prt   = status_dosen["pertemuan"] if status_dosen["pertemuan"] in opt_prt else opt_prt[0]
                     input_pertemuan = st.selectbox("Pertemuan Ke-:", options=opt_prt, index=opt_prt.index(default_prt))
@@ -623,7 +998,6 @@ elif st.session_state['halaman'] == 'dosen':
             st.markdown("---")
             st.markdown("#### Generator QR Code")
 
-            # URL otomatis dari query params / hostname
             try:
                 base_url_default = st.secrets.get("app_url", "https://your-app.streamlit.app")
             except Exception:
@@ -663,7 +1037,7 @@ elif st.session_state['halaman'] == 'dosen':
                         with col_info:
                             st.markdown(
                                 f"📚 **{nm}**<br>"
-                                f"<span style='color:#64748B;font-size:14px;'>👨‍🏫 {nd} | Smt {k['semester']} | Pertemuan {k['pertemuan']}</span>",
+                                f"<span style='opacity:0.6;font-size:14px;'>👨‍🏫 {nd} | Smt {k['semester']} | Pertemuan {k['pertemuan']}</span>",
                                 unsafe_allow_html=True
                             )
                         with col_btn:
@@ -687,12 +1061,12 @@ elif st.session_state['halaman'] == 'dosen':
                                     st.success(f"**{len(df_mf)} mahasiswa** sudah hadir")
                                     for i, row in df_mf.reset_index(drop=True).iterrows():
                                         st.markdown(
-                                            f"**{i+1}. {row['Nama']}** &nbsp;<span style='color:#64748B;font-size:13px;'>({row['NIM']})</span>"
-                                            f"<br><span style='font-size:12px;color:#94A3B8;'>🕒 {row['Jam Isi']} WIB</span>",
+                                            f"**{i+1}. {row['Nama']}** &nbsp;<span style='opacity:0.6;font-size:13px;'>({row['NIM']})</span>"
+                                            f"<br><span style='font-size:12px;opacity:0.5;'>🕒 {row['Jam Isi']} WIB</span>",
                                             unsafe_allow_html=True
                                         )
                                         if i < len(df_mf) - 1:
-                                            st.markdown("<hr style='margin:6px 0;border-color:#F1F5F9;'>", unsafe_allow_html=True)
+                                            st.markdown("<hr style='margin:6px 0;opacity:0.1;'>", unsafe_allow_html=True)
                                 else:
                                     st.info("Belum ada mahasiswa yang hadir.")
                             except gspread.exceptions.WorksheetNotFound:
@@ -711,7 +1085,6 @@ elif st.session_state['halaman'] == 'dosen':
             pilih_makul_a = st.selectbox("Pilih Mata Kuliah:", options=makul_opsi, key="arsip_makul")
             makul_gabung  = f"{pilih_makul_a} ({nama_dosen_aktif})"
 
-            # Sub-tabs: Data | Hapus Entri
             sub1, sub2 = st.tabs(["📊 Lihat & Unduh", "🗑️ Hapus Entri Salah"])
 
             with sub1:
@@ -777,7 +1150,6 @@ elif st.session_state['halaman'] == 'dosen':
                     except gspread.exceptions.WorksheetNotFound:
                         st.info("Sheet belum tersedia.")
 
-                # Histori ringkasan
                 st.markdown("---")
                 st.markdown("##### 📜 Histori Log Kelas")
                 try:
@@ -803,7 +1175,7 @@ elif st.session_state['halaman'] == 'dosen':
                                             <span>📅 <b>Pertemuan Ke-{rh['Pertemuan Ke']}</b></span>
                                             <span style="color:#10B981;font-weight:600;">{rh['total']} Hadir</span>
                                         </div>
-                                        <span style='font-size:12px;color:#64748B;'>Tanggal: {rh['tgl']}</span>
+                                        <span style='font-size:12px;opacity:0.5;'>Tanggal: {rh['tgl']}</span>
                                     </div>
                                 """, unsafe_allow_html=True)
                     else:
@@ -832,3 +1204,28 @@ elif st.session_state['halaman'] == 'dosen':
                         else:  st.error(f"❌ {pesan}")
                     else:
                         st.error("Masukkan NIM terlebih dahulu.")
+
+        # ─────────────────────────────────────────
+        # TAB 4 — CHAT DOSEN (dari dalam dashboard)
+        # ─────────────────────────────────────────
+        with tab4:
+            st.markdown("#### 💬 Live Chat Kelas — Panel Dosen")
+            st.caption("Masuk sebagai dosen ke ruang chat kelas aktif.")
+
+            if not kelas_aktif_sekarang:
+                st.info("Belum ada kelas aktif. Buka kelas dahulu di Tab 1.")
+            else:
+                def label_kelas_d(k):
+                    nm = k['makul'].rsplit(' (', 1)[0]
+                    return f"{nm} | Pertemuan {k['pertemuan']}"
+
+                opsi_chat_dosen = [label_kelas_d(k) for k in kelas_aktif_sekarang]
+                pilih_chat_dos  = st.selectbox("Pilih Kelas Chat:", options=opsi_chat_dosen, key="chat_dos_sel")
+
+                if st.button("Masuk Ruang Chat Kelas Ini 💬", use_container_width=True, key="dos_masuk_chat"):
+                    idx_d = opsi_chat_dosen.index(pilih_chat_dos)
+                    kelas_obj_d = kelas_aktif_sekarang[idx_d]
+                    st.session_state['chat_nickname']      = f"[Dosen] {nama_dosen_aktif.split(',')[0]}"
+                    st.session_state['chat_kelas_dipilih'] = kelas_obj_d['makul']
+                    st.session_state['chat_role']          = 'dosen'
+                    ke_halaman('chat_room')
