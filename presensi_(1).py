@@ -17,7 +17,7 @@ tz_wib         = pytz.timezone('Asia/Jakarta')
 waktu_sekarang = datetime.now(tz_wib)
 
 DEFAULTS = {
-    'prodi':             'Bisnis Digital', # Tambahan untuk filter Prodi
+    'prodi':             'Bisnis Digital',
     'dosen_login':       False,
     'sudah_presensi':    False,
     'halaman':           'landing',
@@ -25,9 +25,10 @@ DEFAULTS = {
     'nim_terverifikasi': None,
     'nama_terverifikasi':None,
     'konfirmasi_data':   None,
-    'chat_nickname':     None,
-    'chat_kelas_dipilih': None,
-    'chat_role':         'mahasiswa',  # 'mahasiswa' atau 'dosen'
+    # QR auto-fill
+    'qr_makul':          None,
+    'qr_pertemuan':      None,
+    'qr_semester':       None,
 }
 for k, v in DEFAULTS.items():
     if k not in st.session_state:
@@ -39,23 +40,14 @@ for k, v in DEFAULTS.items():
 st.set_page_config(page_title="Presensi Bisnis Digital & Aktuaria", page_icon="📝", layout="centered")
 
 # ============================================================
-# CSS — DARK MODE COMPATIBLE (FULL FIX)
+# CSS
 # ============================================================
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
-
-html, body, [class*="css"] {
-    font-family: 'Plus Jakarta Sans', sans-serif;
-}
+html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; }
 header {visibility:hidden;} footer {visibility:hidden;} #MainMenu {visibility:hidden;}
-
-/* ── Adaptive Background ── */
 .stApp { background: var(--background-color); }
-
-/* ══════════════════════════════════════════
-   HEADER BANNER
-══════════════════════════════════════════ */
 .header-banner {
     background: linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%);
     padding: 25px; border-radius: 16px; color: white;
@@ -64,132 +56,64 @@ header {visibility:hidden;} footer {visibility:hidden;} #MainMenu {visibility:hi
 }
 .header-banner h1 { color:white !important; font-weight:800; font-size:28px; margin-bottom:5px; }
 .header-banner p  { color:#E0E7FF !important; font-size:15px; opacity:0.9; margin:0; }
-
-/* ══════════════════════════════════════════
-   FORM WRAPPER
-══════════════════════════════════════════ */
 div[data-testid="stForm"] {
     background: var(--secondary-background-color) !important;
     border: 1px solid rgba(128,128,128,0.2) !important;
     border-radius: 20px !important; padding: 35px !important;
     box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
 }
-
-/* ══════════════════════════════════════════
-   TEXT INPUT & TEXTAREA
-══════════════════════════════════════════ */
 div[data-testid="stTextInput"] input,
 div[data-testid="stTextArea"] textarea,
 div[data-testid="stNumberInput"] input {
     background-color: var(--secondary-background-color) !important;
     color: var(--text-color) !important;
     border: 1.5px solid rgba(128,128,128,0.35) !important;
-    border-radius: 10px !important;
-    font-size: 15px !important;
-    transition: all 0.3s ease !important;
+    border-radius: 10px !important; font-size: 15px !important;
 }
 div[data-testid="stTextInput"] input:focus,
 div[data-testid="stTextArea"] textarea:focus {
     border-color: #6366F1 !important;
     box-shadow: 0 0 0 4px rgba(99,102,241,0.15) !important;
 }
-/* placeholder warna adaptif */
 div[data-testid="stTextInput"] input::placeholder,
 div[data-testid="stTextArea"] textarea::placeholder {
-    color: var(--text-color) !important;
-    opacity: 0.4 !important;
+    color: var(--text-color) !important; opacity: 0.4 !important;
 }
-
-/* ══════════════════════════════════════════
-   SELECTBOX / DROPDOWN — FULL FIX
-══════════════════════════════════════════ */
-div[data-testid="stSelectbox"] > div[data-baseweb="select"] > div,
-div[data-testid="stSelectbox"] > div > div[data-baseweb="select"] > div {
+div[data-testid="stSelectbox"] > div[data-baseweb="select"] > div {
     background-color: var(--secondary-background-color) !important;
     border: 1.5px solid rgba(128,128,128,0.35) !important;
     border-radius: 10px !important;
 }
-div[data-baseweb="select"] span,
-div[data-baseweb="select"] div,
-div[data-testid="stSelectbox"] span {
-    color: var(--text-color) !important;
-    background-color: transparent !important;
-}
-div[data-baseweb="select"] svg {
-    fill: var(--text-color) !important;
-    opacity: 0.6;
-}
-div[data-baseweb="select"] > div:hover {
-    border-color: #6366F1 !important;
-}
-div[data-baseweb="popover"],
-div[data-baseweb="popover"] > div,
-ul[data-baseweb="menu"],
-div[role="listbox"],
-div[data-baseweb="menu"] {
+div[data-baseweb="select"] span, div[data-baseweb="select"] div,
+div[data-testid="stSelectbox"] span { color: var(--text-color) !important; background-color: transparent !important; }
+div[data-baseweb="select"] svg { fill: var(--text-color) !important; opacity: 0.6; }
+div[data-baseweb="popover"], ul[data-baseweb="menu"], div[role="listbox"] {
     background-color: var(--secondary-background-color) !important;
     border: 1px solid rgba(128,128,128,0.25) !important;
     border-radius: 10px !important;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.18) !important;
 }
 li[role="option"], div[role="option"] {
     background-color: var(--secondary-background-color) !important;
     color: var(--text-color) !important;
 }
-li[role="option"]:hover, div[role="option"]:hover,
-li[aria-selected="true"], div[aria-selected="true"] {
+li[role="option"]:hover, li[aria-selected="true"] {
     background-color: rgba(99,102,241,0.15) !important;
-    color: var(--text-color) !important;
 }
-[data-baseweb="menu"] ul li, [data-baseweb="list"] li {
-    background-color: var(--secondary-background-color) !important;
-    color: var(--text-color) !important;
-}
-[data-baseweb="menu"] ul li:hover {
-    background-color: rgba(99,102,241,0.12) !important;
-}
-div[data-testid="stSelectbox"] * { color: var(--text-color) !important; }
-
-/* ══════════════════════════════════════════
-   RADIO BUTTON
-══════════════════════════════════════════ */
-div[data-testid="stRadio"] label,
-div[data-testid="stRadio"] p {
-    color: var(--text-color) !important;
-}
+div[data-testid="stRadio"] label, div[data-testid="stRadio"] p { color: var(--text-color) !important; }
 div[data-testid="stRadio"] > div {
     background: var(--secondary-background-color) !important;
     border: 1px solid rgba(128,128,128,0.2) !important;
-    border-radius: 10px !important;
-    padding: 8px 16px !important;
+    border-radius: 10px !important; padding: 8px 16px !important;
 }
-
-/* ══════════════════════════════════════════
-   ALL LABELS (global)
-══════════════════════════════════════════ */
-label, .stLabel, p.st-emotion-cache-ue6h4q,
-div[data-testid="stTextInput"] label,
-div[data-testid="stTextArea"] label,
-div[data-testid="stSelectbox"] label,
-div[data-testid="stRadio"] label {
+label, .stLabel {
     color: var(--text-color) !important;
-    font-weight: 600 !important;
-    font-size: 14px !important;
+    font-weight: 600 !important; font-size: 14px !important;
 }
-
-/* ══════════════════════════════════════════
-   BUTTONS
-══════════════════════════════════════════ */
 button[kind="formSubmit"] {
     background: linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%) !important;
     color: white !important; border: none !important; border-radius: 12px !important;
     padding: 12px 24px !important; font-size: 16px !important; font-weight: 700 !important;
-    width: 100% !important; box-shadow: 0 4px 15px rgba(79,70,229,0.3) !important;
-    transition: all 0.2s !important;
-}
-button[kind="formSubmit"]:hover {
-    box-shadow: 0 6px 20px rgba(79,70,229,0.45) !important;
-    transform: translateY(-1px) !important;
+    width: 100% !important;
 }
 button[kind="secondary"], button[data-testid="baseButton-secondary"] {
     background-color: var(--secondary-background-color) !important;
@@ -197,58 +121,77 @@ button[kind="secondary"], button[data-testid="baseButton-secondary"] {
     border: 1px solid rgba(128,128,128,0.3) !important;
     border-radius: 10px !important;
 }
-button[kind="secondary"]:hover, button[data-testid="baseButton-secondary"]:hover {
-    border-color: #6366F1 !important;
-    color: #6366F1 !important;
-}
-
-/* ══════════════════════════════════════════
-   CONTAINER, TABS, METRIC, EXPANDER, ALERT
-══════════════════════════════════════════ */
-div[data-testid="stVerticalBlockBorderWrapper"], div[data-testid="stVerticalBlockBorderWrapper"] > div {
+div[data-testid="stVerticalBlockBorderWrapper"] {
     background-color: var(--secondary-background-color) !important;
     border: 1px solid rgba(128,128,128,0.2) !important; border-radius: 12px !important;
 }
-div[data-testid="stTabs"] > div:first-child { border-bottom: 2px solid rgba(128,128,128,0.15) !important; }
 button[data-baseweb="tab"] { color: var(--text-color) !important; background: transparent !important; opacity: 0.6; }
 button[data-baseweb="tab"][aria-selected="true"] { color: #6366F1 !important; opacity: 1; border-bottom-color: #6366F1 !important; }
-div[data-testid="stMetric"] { background: var(--secondary-background-color) !important; border: 1px solid rgba(128,128,128,0.2) !important; border-radius: 12px !important; padding: 12px 16px !important; }
-details[data-testid="stExpander"] > summary { background: var(--secondary-background-color) !important; border: 1px solid rgba(128,128,128,0.2) !important; border-radius: 8px !important; }
-div[data-testid="stExpanderDetails"] { background: var(--secondary-background-color) !important; border: 1px solid rgba(128,128,128,0.15) !important; border-top: none !important; border-radius: 0 0 8px 8px !important; }
+div[data-testid="stMetric"] {
+    background: var(--secondary-background-color) !important;
+    border: 1px solid rgba(128,128,128,0.2) !important;
+    border-radius: 12px !important; padding: 12px 16px !important;
+}
+details[data-testid="stExpander"] > summary {
+    background: var(--secondary-background-color) !important;
+    border: 1px solid rgba(128,128,128,0.2) !important;
+    border-radius: 8px !important;
+}
+div[data-testid="stExpanderDetails"] {
+    background: var(--secondary-background-color) !important;
+    border: 1px solid rgba(128,128,128,0.15) !important;
+    border-top: none !important; border-radius: 0 0 8px 8px !important;
+}
 div[data-testid="stAlert"] { border-radius: 10px !important; }
-div[data-testid="stDataFrame"], iframe[title="st_dataframe"] { border-radius: 10px !important; border: 1px solid rgba(128,128,128,0.2) !important; }
-input[type="password"] { background-color: var(--secondary-background-color) !important; color: var(--text-color) !important; border: 1.5px solid rgba(128,128,128,0.35) !important; border-radius: 10px !important; }
-
-/* ── Custom Widgets ── */
-.clock-container { background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.4); border-radius: 12px; padding: 12px; text-align: center; margin-bottom: 20px; color: #D97706; font-weight: 600; font-size: 14px; }
-.kelas-badge { background: var(--secondary-background-color); border-left: 4px solid #6366F1; border-radius: 8px; padding: 12px 16px; margin-bottom: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); color: var(--text-color); }
-.konfirmasi-box { background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.06) 100%); border: 2px solid rgba(16,185,129,0.5); border-radius: 20px; padding: 30px; text-align: center; margin: 10px 0 20px 0; }
+div[data-testid="stDataFrame"] { border-radius: 10px !important; border: 1px solid rgba(128,128,128,0.2) !important; }
+input[type="password"] {
+    background-color: var(--secondary-background-color) !important;
+    color: var(--text-color) !important;
+    border: 1.5px solid rgba(128,128,128,0.35) !important; border-radius: 10px !important;
+}
+.clock-container {
+    background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.4);
+    border-radius: 12px; padding: 12px; text-align: center; margin-bottom: 20px;
+    color: #D97706; font-weight: 600; font-size: 14px;
+}
+.kelas-badge {
+    background: var(--secondary-background-color); border-left: 4px solid #6366F1;
+    border-radius: 8px; padding: 12px 16px; margin-bottom: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.06); color: var(--text-color);
+}
+.konfirmasi-box {
+    background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.06) 100%);
+    border: 2px solid rgba(16,185,129,0.5); border-radius: 20px;
+    padding: 30px; text-align: center; margin: 10px 0 20px 0;
+}
 .konfirmasi-box h2 { color: #10B981 !important; font-size: 22px; margin-bottom: 8px; }
-.counter-box { background: var(--secondary-background-color); border-radius: 12px; padding: 14px 20px; text-align: center; border: 1px solid rgba(128,128,128,0.2); margin-top: 10px; }
+.counter-box {
+    background: var(--secondary-background-color); border-radius: 12px;
+    padding: 14px 20px; text-align: center;
+    border: 1px solid rgba(128,128,128,0.2); margin-top: 10px;
+}
 .counter-box .angka { font-size: 32px; font-weight: 800; color: #6366F1; }
-.histori-container { background-color: var(--secondary-background-color); border: 1px solid rgba(128,128,128,0.2); border-left: 4px solid #10B981; border-radius: 8px; padding: 15px; margin-bottom: 12px; }
-.akses-card { background: var(--secondary-background-color); border-radius: 16px; padding: 30px 20px; text-align: center; border: 1.5px solid rgba(128,128,128,0.2); transition: all 0.2s; }
+.histori-container {
+    background-color: var(--secondary-background-color);
+    border: 1px solid rgba(128,128,128,0.2); border-left: 4px solid #10B981;
+    border-radius: 8px; padding: 15px; margin-bottom: 12px;
+}
+.akses-card {
+    background: var(--secondary-background-color); border-radius: 16px;
+    padding: 30px 20px; text-align: center;
+    border: 1.5px solid rgba(128,128,128,0.2); transition: all 0.2s;
+}
 .akses-card:hover { border-color: #6366F1; }
-
-/* ── Chat Widget ── */
-.chat-bubble-wrapper { display: flex; margin-bottom: 12px; align-items: flex-end; gap: 8px; }
-.chat-bubble-wrapper.self { flex-direction: row-reverse; }
-.chat-avatar { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; font-weight: 700; }
-.chat-avatar.mhs { background: rgba(99,102,241,0.15); color: #6366F1; }
-.chat-avatar.dos  { background: rgba(16,185,129,0.15); color: #10B981; }
-.chat-bubble { max-width: 72%; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 1.5; word-break: break-word; }
-.chat-bubble.other { background: var(--secondary-background-color); border: 1px solid rgba(128,128,128,0.2); border-bottom-left-radius: 4px; }
-.chat-bubble.self { background: linear-gradient(135deg, #4F46E5, #6366F1); color: white; border-bottom-right-radius: 4px; }
-.chat-meta { font-size: 11px; opacity: 0.45; margin-top: 4px; display: block; }
-.chat-scroll-area { max-height: 420px; overflow-y: auto; padding: 16px; border-radius: 12px; border: 1px solid rgba(128,128,128,0.2); background: var(--background-color); margin-bottom: 16px; }
-.chat-room-header { background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%); padding: 14px 18px; border-radius: 12px; color: white; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
-.online-dot { width: 10px; height: 10px; background: #4ADE80; border-radius: 50%; display: inline-block; box-shadow: 0 0 6px #4ADE80; }
-.chat-dosen-badge { background: rgba(16,185,129,0.15); color: #10B981; border: 1px solid rgba(16,185,129,0.3); border-radius: 20px; padding: 2px 10px; font-size: 11px; font-weight: 700; }
+.qr-banner {
+    background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(99,102,241,0.08) 100%);
+    border: 2px solid rgba(16,185,129,0.4); border-radius: 16px;
+    padding: 16px 20px; margin-bottom: 16px;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # ============================================================
-# GOOGLE SHEETS
+# GOOGLE SHEETS — CACHE AGRESIF
 # ============================================================
 SHEET_ID = "1Msh_H8XgFpAJiQFuPB7l4V_0YDPcNWSBEW6y9X9eBk8"
 SCOPES   = ["https://www.googleapis.com/auth/spreadsheets",
@@ -261,9 +204,10 @@ def get_sheet():
     return client.open_by_key(SHEET_ID)
 
 STATUS_SHEET = "STATUS_KELAS"
-CHAT_SHEET   = "CHAT_PESAN"
 
-def baca_semua_kelas_aktif():
+# Cache baca kelas aktif 30 detik — kurangi hit API secara drastis
+@st.cache_data(ttl=30)
+def baca_semua_kelas_aktif_cached():
     try:
         sheet = get_sheet()
         try:
@@ -275,10 +219,16 @@ def baca_semua_kelas_aktif():
         data = ws.get_all_records()
         return [r for r in data if str(r.get("aktif","0")) == "1"]
     except Exception as e:
-        st.error(f"Gagal terhubung ke database: {e}")
         return []
 
-def baca_status_kelas_dosen(dosen_key):
+def baca_semua_kelas_aktif():
+    """Wrapper — tampilkan error hanya sekali per session."""
+    result = baca_semua_kelas_aktif_cached()
+    return result
+
+# Cache status dosen 15 detik
+@st.cache_data(ttl=15)
+def baca_status_kelas_dosen_cached(dosen_key):
     try:
         sheet = get_sheet()
         ws    = sheet.worksheet(STATUS_SHEET)
@@ -290,8 +240,12 @@ def baca_status_kelas_dosen(dosen_key):
                     "pertemuan": str(row.get("pertemuan","-")),
                     "aktif":     str(row.get("aktif","0")) == "1",
                 }
-    except Exception: pass
+    except Exception:
+        pass
     return {"makul":"Belum Diatur","semester":"-","pertemuan":"-","aktif":False}
+
+def baca_status_kelas_dosen(dosen_key):
+    return baca_status_kelas_dosen_cached(dosen_key)
 
 def tulis_status_kelas(makul, semester, pertemuan, dosen_key, aktif=True):
     sheet = get_sheet()
@@ -310,6 +264,9 @@ def tulis_status_kelas(makul, semester, pertemuan, dosen_key, aktif=True):
     new_row = [makul, semester, pertemuan, "1" if aktif else "0", dosen_key]
     if row_idx: ws.update(f"A{row_idx}:E{row_idx}", [new_row])
     else:       ws.append_row(new_row)
+    # Invalidasi cache setelah tulis
+    baca_semua_kelas_aktif_cached.clear()
+    baca_status_kelas_dosen_cached.clear()
 
 def tutup_kelas(dosen_key):
     try:
@@ -321,22 +278,12 @@ def tutup_kelas(dosen_key):
         col_ak = header.index("aktif") + 1
         for i, row in enumerate(data[1:], start=2):
             if len(row) >= col_dk and row[col_dk-1] == dosen_key:
-                ws.update_cell(i, col_ak, "0"); return True
-    except Exception: pass
-    return False
-
-def tutup_kelas_by_makul(makul):
-    try:
-        sheet  = get_sheet()
-        ws     = sheet.worksheet(STATUS_SHEET)
-        data   = ws.get_all_values()
-        header = data[0]
-        col_m  = header.index("makul") + 1
-        col_ak = header.index("aktif") + 1
-        for i, row in enumerate(data[1:], start=2):
-            if len(row) >= col_m and row[col_m-1] == makul:
-                ws.update_cell(i, col_ak, "0"); return True
-    except Exception: pass
+                ws.update_cell(i, col_ak, "0")
+                baca_semua_kelas_aktif_cached.clear()
+                baca_status_kelas_dosen_cached.clear()
+                return True
+    except Exception:
+        pass
     return False
 
 def hapus_entri_presensi(nama_ws, nim, pertemuan):
@@ -385,6 +332,8 @@ def simpan_ke_sheets(data: dict):
         data["NIM"], data["Nama"], data["Rangkuman Materi"]
     ])
 
+# Cache hitung hadir 20 detik
+@st.cache_data(ttl=20)
 def hitung_hadir(makul, pertemuan):
     try:
         sheet  = get_sheet()
@@ -407,102 +356,46 @@ def generate_qr(url):
     buf = BytesIO(); img.save(buf, format="PNG"); return buf.getvalue()
 
 # ============================================================
-# CHAT FUNCTIONS
+# DATA JADWAL DOSEN
 # ============================================================
-def get_or_create_chat_sheet():
-    try:
-        sheet = get_sheet()
-        try:
-            return sheet.worksheet(CHAT_SHEET)
-        except gspread.exceptions.WorksheetNotFound:
-            ws = sheet.add_worksheet(title=CHAT_SHEET, rows="2000", cols="6")
-            ws.append_row(["timestamp","kelas","nickname","role","pesan"])
-            return ws
-    except Exception as e:
-        return None
-
-def kirim_pesan_chat(kelas, nickname, role, pesan):
-    try:
-        ws = get_or_create_chat_sheet()
-        if ws is None: return False
-        ts = datetime.now(tz_wib).strftime("%Y-%m-%d %H:%M:%S")
-        ws.append_row([ts, kelas, nickname, role, pesan])
-        return True
-    except Exception as e:
-        return False
-
-def baca_pesan_chat(kelas, limit=50):
-    try:
-        ws   = get_or_create_chat_sheet()
-        if ws is None: return []
-        data = ws.get_all_records()
-        msgs = [r for r in data if str(r.get("kelas","")) == str(kelas)]
-        return msgs[-limit:]
-    except Exception:
-        return []
-
-# ============================================================
-# DATA JADWAL DOSEN BERDASARKAN PRODI
-# ============================================================
-
-# --- Data Dosen Bisnis Digital ---
 DATA_JADWAL_BD = {
     "Riyan Dwi Yulian P, S.Kom., M.Kom.": [
         "Analisis Perancangan Berbasis Objek A",
         "Analisis Perancangan Berbasis Objek B",
         "Mata Kuliah Pilihan Digital (Data Analyze) A",
         "Pemrograman Mobile",
-        "Data Mining A",
-        "Data Mining B",
+        "Data Mining A", "Data Mining B",
         "Mata Kuliah Pilihan Digital (Data Analyze) B"
     ],
     "Esti Nur Wakhidah, S.Pd., M.M.": [
-        "Manajemen Pemasaran Bisnis A",
-        "Metodologi Penelitian B",
-        "Komunikasi Bisnis",
-        "Metodologi Penelitian A",
+        "Manajemen Pemasaran Bisnis A", "Metodologi Penelitian B",
+        "Komunikasi Bisnis", "Metodologi Penelitian A",
         "Manajemen Pemasaran Bisnis B"
     ],
     "Didik Adi Sabara, S.M., M.E.": [
-        "Mentoring Bisnis Digital A",
-        "Mentoring Bisnis Digital B",
-        "E-Commerce",
-        "Kewirausahaan Digital A",
-        "Kewirausahaan Digital B"
+        "Mentoring Bisnis Digital A", "Mentoring Bisnis Digital B",
+        "E-Commerce", "Kewirausahaan Digital A", "Kewirausahaan Digital B"
     ],
-    "Nour Mohammed Moussa Al Fattah M.Pd.": [
-        "AIK 2 A","AIK 4","AIK 2 B"
-    ],
+    "Nour Mohammed Moussa Al Fattah M.Pd.": ["AIK 2 A","AIK 4","AIK 2 B"],
     "Ridhwan Sinatria, S.E., M.M.": [
         "Manajemen Sumber Daya Manusia B",
         "Mata Kuliah Pilihan Bisnis (Ekonomi Digital) A",
         "Manajemen Sumber Daya Manusia A",
         "Mata Kuliah Pilihan Bisnis (Ekonomi Digital) B",
         "Manajemen Risiko",
-        "Kerja Praktek A (Team Teaching)",
-        "Kerja Praktek B (Team Teaching)"
+        "Kerja Praktek A (Team Teaching)", "Kerja Praktek B (Team Teaching)"
     ],
     "Kartika Dewi Permatasari, S.Ak., M.Ak., Ak.": [
-        "Dasar-dasar Akuntansi A",
-        "Dasar-dasar Akuntansi B",
-        "Perpajakan",
-        "Kerja Praktek A (Team Teaching)",
-        "Kerja Praktek B (Team Teaching)"
+        "Dasar-dasar Akuntansi A", "Dasar-dasar Akuntansi B",
+        "Perpajakan", "Kerja Praktek A (Team Teaching)", "Kerja Praktek B (Team Teaching)"
     ],
     "Sriyati., S.Kom., M.Kom.": [
-        "Pemrograman Web A","Basis Data",
-        "Pemrograman Web B","Sistem Pendukung Keputusan"
+        "Pemrograman Web A","Basis Data","Pemrograman Web B","Sistem Pendukung Keputusan"
     ],
-    "Doni Uji Windiatmoko, S.Pd., M.Pd.": [
-        "Kewarganegaraan B","Kewarganegaraan A"
-    ],
-    "Purwati, S.S., M.Hum.": [
-        "Bahasa Inggris 2 A","Bahasa Inggris 2 B"
-    ],
+    "Doni Uji Windiatmoko, S.Pd., M.Pd.": ["Kewarganegaraan B","Kewarganegaraan A"],
+    "Purwati, S.S., M.Hum.": ["Bahasa Inggris 2 A","Bahasa Inggris 2 B"],
 }
 
-# --- Data Dosen Aktuaria ---
-# Silakan sesuaikan nama dosen dan list makul di bawah dengan excel data Aktuaria Anda.
 DATA_JADWAL_AKT = {
     "Miftahul Jannah, S.Pd., M.Mat.": [
         "Algoritma dan Pemrogaman I A (Sebelum UTS)",
@@ -517,24 +410,17 @@ DATA_JADWAL_AKT = {
     "Adin Nadiya Ifati, S.Pd., M.Mat.": [
         "Algoritma dan Pemrogaman I A (Setelah UTS)",
         "Pengantar Akuntansi I A (Sebelum UTS)",
-        "Kalkulus II A (Sebelum UTS)",
-        "Kalkulus II A (Setelah UTS)",
+        "Kalkulus II A (Sebelum UTS)", "Kalkulus II A (Setelah UTS)",
         "Algoritma dan Pemrogaman I B (Setelah UTS)",
         "Pengantar Akuntansi I B (Sebelum UTS)",
-        "Kalkulus II B (Sebelum UTS)",
-        "Kalkulus II B (Setelah UTS)"
+        "Kalkulus II B (Sebelum UTS)", "Kalkulus II B (Setelah UTS)"
     ],
     "Rifki Chandra Utama, S.Si., M.Sc.": [
-        "Matematika Keuangan I A (Sebelum UTS)",
-        "Matematika Keuangan I A (Setelah UTS)",
-        "Matematika Keuangan I B (Sebelum UTS)",
-        "Matematika Keuangan I B (Setelah UTS)",
-        "Pengantar Matematika Aktuaria II (Sebelum UTS)",
-        "Pengantar Matematika Aktuaria II (Setelah UTS)",
-        "Pengantar Teori Risiko I (Sebelum UTS)",
-        "Pengantar Teori Risiko I (Setelah UTS)",
-        "Pengelolaan Dana Pensiun (Sebelum UTS)",
-        "Pengelolaan Dana Pensiun (Setelah UTS)"
+        "Matematika Keuangan I A (Sebelum UTS)", "Matematika Keuangan I A (Setelah UTS)",
+        "Matematika Keuangan I B (Sebelum UTS)", "Matematika Keuangan I B (Setelah UTS)",
+        "Pengantar Matematika Aktuaria II (Sebelum UTS)", "Pengantar Matematika Aktuaria II (Setelah UTS)",
+        "Pengantar Teori Risiko I (Sebelum UTS)", "Pengantar Teori Risiko I (Setelah UTS)",
+        "Pengelolaan Dana Pensiun (Sebelum UTS)", "Pengelolaan Dana Pensiun (Setelah UTS)"
     ],
     "Nour Muhammed Moussa Al-Fattah, S.Ag., M.Pd.": [
         "Al-Islam dan Kemuhammadiyahan II A (Sebelum UTS)",
@@ -549,38 +435,27 @@ DATA_JADWAL_AKT = {
         "Pengantar Teori Probabilitas A (Setelah UTS)",
         "Pengantar Teori Probabilitas B (Sebelum UTS)",
         "Pengantar Teori Probabilitas B (Setelah UTS)",
-        "Proses Stokastik (Sebelum UTS)",
-        "Proses Stokastik (Setelah UTS)"
+        "Proses Stokastik (Sebelum UTS)", "Proses Stokastik (Setelah UTS)"
     ],
     "Doni Uji Windiatmoko, S.Pd., M.Pd.": [
-        "Kewarganegaraan A (Sebelum UTS)",
-        "Kewarganegaraan A (Setelah UTS)",
-        "Kewarganegaraan B (Sebelum UTS)",
-        "Kewarganegaraan B (Setelah UTS)"
+        "Kewarganegaraan A (Sebelum UTS)", "Kewarganegaraan A (Setelah UTS)",
+        "Kewarganegaraan B (Sebelum UTS)", "Kewarganegaraan B (Setelah UTS)"
     ],
     "Ridhwan Sinatria, S.E., M.M.": [
-        "Kewirausahaan (Sebelum UTS)",
-        "Kewirausahaan (Setelah UTS)"
+        "Kewirausahaan (Sebelum UTS)", "Kewirausahaan (Setelah UTS)"
     ],
     "Nestria Agista, S.Stat., M.Sc.": [
-        "Analisis Regresi (Sebelum UTS)",
-        "Analisis Regresi (Setelah UTS)",
-        "Statistika Matematika II (Sebelum UTS)",
-        "Statistika Matematika II (Setelah UTS)"
+        "Analisis Regresi (Sebelum UTS)", "Analisis Regresi (Setelah UTS)",
+        "Statistika Matematika II (Sebelum UTS)", "Statistika Matematika II (Setelah UTS)"
     ],
-    "Purwati, M.Hum.": [
-        "Bahasa Inggris II (Sebelum UTS)",
-        "Bahasa Inggris II (Setelah UTS)"
-    ],
+    "Purwati, M.Hum.": ["Bahasa Inggris II (Sebelum UTS)", "Bahasa Inggris II (Setelah UTS)"],
     "Kartika Dewi Permatasari, S.AK., M.AK., AK.": [
-        "Perpajakan (Sebelum UTS)",
-        "Perpajakan (Setelah UTS)"
+        "Perpajakan (Sebelum UTS)", "Perpajakan (Setelah UTS)"
     ]
 }
 
 def get_makul_dosen(nama_dosen):
-    """Mencari makul dosen tanpa memedulikan prodi apa (untuk fallback)"""
-    if nama_dosen in DATA_JADWAL_BD: return DATA_JADWAL_BD[nama_dosen]
+    if nama_dosen in DATA_JADWAL_BD:  return DATA_JADWAL_BD[nama_dosen]
     if nama_dosen in DATA_JADWAL_AKT: return DATA_JADWAL_AKT[nama_dosen]
     return []
 
@@ -589,12 +464,24 @@ def ke_halaman(nama):
     st.rerun()
 
 # ============================================================
+# HANDLE QR PARAMS — auto-fill sesi dari URL
+# ============================================================
+params = st.query_params
+if params.get("makul") and not st.session_state.get('qr_makul'):
+    st.session_state['qr_makul']     = params.get("makul")
+    st.session_state['qr_pertemuan'] = params.get("pertemuan","")
+    st.session_state['qr_semester']  = params.get("semester","")
+    # Langsung arahkan ke halaman mahasiswa
+    if st.session_state['halaman'] == 'landing':
+        st.session_state['halaman'] = 'mahasiswa'
+
+# ============================================================
 # HEADER
 # ============================================================
 st.markdown("""
     <div class="header-banner">
         <h1>📝 PRESENSI PERKULIAHAN</h1>
-        <p>Bisnis Digital & Aktuaria — Beta ver 2.0</p>
+        <p>Bisnis Digital & Aktuaria — Beta ver 3.0</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -603,18 +490,15 @@ st.markdown("""
 # ============================================================
 if st.session_state['halaman'] == 'landing':
 
-    # Pilihan Program Studi di Landing Page
     st.markdown("<h3 style='text-align:center;font-weight:700;'>🎓 Pilih Program Studi</h3>", unsafe_allow_html=True)
-    
     idx_prodi = 0 if st.session_state['prodi'] == 'Bisnis Digital' else 1
-    prodi_terpilih = st.radio("Program Studi", ["Bisnis Digital", "Aktuaria"], index=idx_prodi, horizontal=True, label_visibility="collapsed")
+    prodi_terpilih = st.radio("Program Studi", ["Bisnis Digital", "Aktuaria"],
+                               index=idx_prodi, horizontal=True, label_visibility="collapsed")
     st.session_state['prodi'] = prodi_terpilih
 
     semua_kelas_aktif = baca_semua_kelas_aktif()
-    
-    # Filter kelas aktif khusus untuk prodi yang dipilih di landing page
-    jadwal_prodi = DATA_JADWAL_AKT if prodi_terpilih == 'Aktuaria' else DATA_JADWAL_BD
-    dosen_valid = list(jadwal_prodi.keys())
+    jadwal_prodi      = DATA_JADWAL_AKT if prodi_terpilih == 'Aktuaria' else DATA_JADWAL_BD
+    dosen_valid       = list(jadwal_prodi.keys())
     kelas_landing_aktif = [k for k in semua_kelas_aktif if k['dosen_key'] in dosen_valid]
 
     st.markdown("<hr style='opacity: 0.2;'>", unsafe_allow_html=True)
@@ -634,8 +518,7 @@ if st.session_state['halaman'] == 'landing':
 
     st.markdown("<br><h3 style='text-align:center;font-weight:700;'>Pilih Akses Anda</h3><br>", unsafe_allow_html=True)
 
-    col_mhs, col_dos, col_chat = st.columns(3)
-
+    col_mhs, col_dos = st.columns(2)
     with col_mhs:
         st.markdown("""
             <div class='akses-card'>
@@ -658,17 +541,6 @@ if st.session_state['halaman'] == 'landing':
         if st.button("Masuk Dosen", use_container_width=True, key="btn_dos"):
             ke_halaman('dosen')
 
-    with col_chat:
-        st.markdown("""
-            <div class='akses-card' style='border-color:rgba(99,102,241,0.4);'>
-                <div style='font-size:40px;'>💬</div>
-                <div style='font-weight:700;font-size:17px;margin-top:10px;'>Live Chat</div>
-                <div style='font-size:12px;opacity:0.6;margin-top:6px;'>Chat kelas realtime</div>
-            </div>""", unsafe_allow_html=True)
-        st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
-        if st.button("Masuk Chat", use_container_width=True, key="btn_chat"):
-            ke_halaman('chat_pilih')
-
 # ============================================================
 # HALAMAN MAHASISWA
 # ============================================================
@@ -677,58 +549,76 @@ elif st.session_state['halaman'] == 'mahasiswa':
     col_back, _ = st.columns([1, 4])
     with col_back:
         if st.button("← Kembali", key="back_mhs"):
-            st.session_state['sudah_presensi']    = False
-            st.session_state['konfirmasi_data']   = None
+            # Reset QR state saat kembali
+            st.session_state['qr_makul']     = None
+            st.session_state['qr_pertemuan'] = None
+            st.session_state['qr_semester']  = None
+            st.session_state['sudah_presensi'] = False
             ke_halaman('landing')
 
-    if st.session_state['sudah_presensi'] and st.session_state['konfirmasi_data']:
-        kd = st.session_state['konfirmasi_data']
+    prodi_mhs = st.session_state.get('prodi', 'Bisnis Digital')
+
+    if st.session_state.get('sudah_presensi') and st.session_state.get('konfirmasi_data'):
+        konfirmasi = st.session_state['konfirmasi_data']
+        jumlah_hadir = hitung_hadir(konfirmasi['makul_raw'], konfirmasi['pertemuan'])
         st.markdown(f"""
             <div class="konfirmasi-box">
-                <h2>✅ Kehadiran Tercatat!</h2>
-                <div class="detail">
-                    <b>{kd['nama']}</b> &nbsp;·&nbsp; NIM: {kd['nim']}<br>
-                    📚 {kd['makul']}<br>
-                    📅 {kd['tanggal']} &nbsp;·&nbsp; 🕒 {kd['jam']} WIB<br>
-                    📖 Pertemuan Ke-{kd['pertemuan']} &nbsp;·&nbsp; Semester {kd['semester']}
-                </div>
+                <h2>✅ Presensi Berhasil!</h2>
+                <p style="font-size:18px;font-weight:700;margin:0">{konfirmasi['nama']}</p>
+                <p style="opacity:0.6;margin:4px 0 0">NIM: {konfirmasi['nim']}</p>
+                <hr style="opacity:0.2;margin:14px 0">
+                <p style="margin:0;font-size:14px;">📚 {konfirmasi['makul']}</p>
+                <p style="margin:4px 0;font-size:13px;opacity:0.7;">
+                    Semester {konfirmasi['semester']} &nbsp;·&nbsp; Pertemuan ke-{konfirmasi['pertemuan']}
+                </p>
+                <p style="margin:4px 0;font-size:13px;opacity:0.7;">
+                    🗓️ {konfirmasi['tanggal']} &nbsp;·&nbsp; ⏰ {konfirmasi['jam']} WIB
+                </p>
             </div>
-        """, unsafe_allow_html=True)
-        total_hadir = hitung_hadir(kd['makul_raw'], kd['pertemuan'])
-        st.markdown(f"""
             <div class="counter-box">
-                <div class="angka">{total_hadir}</div>
-                <div class="label">mahasiswa sudah hadir di kelas ini 🎉</div>
+                <div class="angka">{jumlah_hadir}</div>
+                <div style="font-size:13px;opacity:0.6;">Mahasiswa hadir di sesi ini</div>
             </div>
         """, unsafe_allow_html=True)
 
-        st.info("💡 Form telah dikunci untuk sesi ini. Terima kasih telah hadir!")
+        st.markdown("<br>", unsafe_allow_html=True)
+        if st.button("← Kembali ke Beranda", use_container_width=True):
+            st.session_state['sudah_presensi'] = False
+            st.session_state['konfirmasi_data'] = None
+            st.session_state['qr_makul'] = None
+            st.session_state['qr_pertemuan'] = None
+            st.session_state['qr_semester'] = None
+            ke_halaman('landing')
 
-        if st.button("💬 Masuk Chat Kelas", use_container_width=True, key="btn_ke_chat_mhs"):
-            st.session_state['chat_nickname']      = kd['nama']
-            st.session_state['chat_kelas_dipilih'] = kd['makul_raw']
-            st.session_state['chat_role']          = 'mahasiswa'
-            ke_halaman('chat_room')
     else:
-        # Pilihan Prodi untuk mencegah mahasiswa salah masuk kelas jika dari link langsung
-        idx_prodi_mhs = 0 if st.session_state['prodi'] == 'Bisnis Digital' else 1
-        prodi_mhs = st.selectbox("🎓 Program Studi Anda:", ["Bisnis Digital", "Aktuaria"], index=idx_prodi_mhs)
-        st.session_state['prodi'] = prodi_mhs
-
         semua_kelas_aktif = baca_semua_kelas_aktif()
-        
-        # Filter dropdown kelas hanya untuk prodi yang dipilih
-        jadwal_mhs = DATA_JADWAL_AKT if prodi_mhs == 'Aktuaria' else DATA_JADWAL_BD
-        dosen_mhs = list(jadwal_mhs.keys())
-        kelas_mhs_aktif = [k for k in semua_kelas_aktif if k['dosen_key'] in dosen_mhs]
+        jadwal_prodi      = DATA_JADWAL_AKT if prodi_mhs == 'Aktuaria' else DATA_JADWAL_BD
+        dosen_valid       = list(jadwal_prodi.keys())
+        kelas_mhs_aktif   = [k for k in semua_kelas_aktif if k['dosen_key'] in dosen_valid]
 
         st.markdown(f"""
             <div class="clock-container">
-                🕒 Tanggal: <b>{waktu_sekarang.strftime('%d-%m-%Y')}</b> &nbsp;|&nbsp;
-                Jam: <b>{waktu_sekarang.strftime('%H:%M:%S')} WIB</b>
-                <br><small style="opacity:0.7;font-weight:normal;">Waktu server tercatat otomatis.</small>
+                🕒 {waktu_sekarang.strftime('%A, %d %B %Y — %H:%M:%S')} WIB
             </div>
         """, unsafe_allow_html=True)
+
+        # ── Banner jika masuk dari QR ──
+        qr_makul = st.session_state.get('qr_makul')
+        if qr_makul:
+            nama_tampil = qr_makul.rsplit(' (', 1)[0] if ' (' in qr_makul else qr_makul
+            st.markdown(f"""
+                <div class="qr-banner">
+                    <div style="font-weight:700;font-size:15px;">📲 Scan QR Berhasil!</div>
+                    <div style="font-size:13px;opacity:0.8;margin-top:4px;">
+                        Kelas: <b>{nama_tampil}</b> &nbsp;·&nbsp;
+                        Smt {st.session_state.get('qr_semester','-')} &nbsp;·&nbsp;
+                        Pertemuan ke-{st.session_state.get('qr_pertemuan','-')}
+                    </div>
+                    <div style="font-size:12px;opacity:0.6;margin-top:2px;">
+                        Sesi sudah otomatis terpilih. Isi nama, NIM, dan rangkuman.
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
 
         with st.form(key="form_presensi", clear_on_submit=False):
             st.markdown("<h4 style='text-align:center;margin-bottom:20px;'>📝 Form Kehadiran</h4>", unsafe_allow_html=True)
@@ -739,16 +629,46 @@ elif st.session_state['halaman'] == 'mahasiswa':
             with col_nim:
                 nim  = st.text_input("NIM", placeholder="Contoh: 220101001")
 
-            if kelas_mhs_aktif:
-                def label_kelas(k):
-                    nm = k['makul'].rsplit(' (', 1)[0]
-                    nd = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
-                    return f"{nm} — {nd} | Pertemuan {k['pertemuan']}"
-                opsi_kelas           = [label_kelas(k) for k in kelas_mhs_aktif]
-                pilihan_kelas_label  = st.selectbox("🏫 Pilih Sesi Kelas:", options=opsi_kelas)
-            else:
-                pilihan_kelas_label = None
-                st.warning(f"⚠️ Belum ada kelas {prodi_mhs} yang aktif. Silakan tunggu instruksi dosen.")
+            # Jika dari QR → auto-select kelas, tidak bisa diubah
+            if qr_makul:
+                # Cari kelas yang sesuai dari kelas aktif
+                kelas_qr = next(
+                    (k for k in kelas_mhs_aktif if k['makul'] == qr_makul),
+                    None
+                )
+                if kelas_qr:
+                    nm  = kelas_qr['makul'].rsplit(' (', 1)[0]
+                    nd  = kelas_qr['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
+                    st.markdown(f"""
+                        <div style='background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);
+                            border-radius:10px;padding:10px 14px;font-size:14px;margin-bottom:8px;'>
+                            🏫 <b>{nm}</b> &nbsp;—&nbsp; {nd} &nbsp;|&nbsp; Pertemuan {kelas_qr['pertemuan']}
+                        </div>
+                    """, unsafe_allow_html=True)
+                    kelas_terpilih_obj = kelas_qr
+                    opsi_kelas = [f"{nm} — {nd} | Pertemuan {kelas_qr['pertemuan']}"]
+                    pilihan_kelas_label = opsi_kelas[0]
+                    # Hidden selectbox agar form valid
+                    st.selectbox("🏫 Sesi Kelas:", options=opsi_kelas,
+                                 label_visibility="collapsed", disabled=True)
+                else:
+                    st.warning("⚠️ Kelas dari QR ini sudah tidak aktif. Pilih kelas manual di bawah.")
+                    kelas_terpilih_obj = None
+                    qr_makul = None
+
+            if not qr_makul:
+                if kelas_mhs_aktif:
+                    def label_kelas(k):
+                        nm = k['makul'].rsplit(' (', 1)[0]
+                        nd = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
+                        return f"{nm} — {nd} | Pertemuan {k['pertemuan']}"
+                    opsi_kelas          = [label_kelas(k) for k in kelas_mhs_aktif]
+                    pilihan_kelas_label = st.selectbox("🏫 Pilih Sesi Kelas:", options=opsi_kelas)
+                    kelas_terpilih_obj  = None  # akan dicari saat submit
+                else:
+                    st.warning(f"⚠️ Belum ada kelas {prodi_mhs} yang aktif. Silakan tunggu instruksi dosen.")
+                    pilihan_kelas_label = None
+                    kelas_terpilih_obj  = None
 
             materi = st.text_area(
                 "Rangkuman Materi Hari Ini (min. 20 karakter)",
@@ -759,236 +679,65 @@ elif st.session_state['halaman'] == 'mahasiswa':
             submit_button = st.form_submit_button(label="KIRIM BUKTI HADIR")
 
         if submit_button:
-            if not kelas_mhs_aktif or pilihan_kelas_label is None:
+            # Cari kelas yang dipilih
+            if kelas_terpilih_obj is None and kelas_mhs_aktif and pilihan_kelas_label:
+                idx_pilihan   = opsi_kelas.index(pilihan_kelas_label)
+                kelas_terpilih_obj = kelas_mhs_aktif[idx_pilihan]
+
+            if not kelas_mhs_aktif and not kelas_terpilih_obj:
                 st.error("Gagal! Belum ada kelas yang dibuka saat ini.")
             elif not nama.strip():
                 st.error("Nama wajib diisi!")
             elif not nim.strip():
                 st.error("NIM wajib diisi!")
             elif len(materi.strip()) < 20:
-                st.error(f"Rangkuman materi terlalu pendek ({len(materi.strip())} karakter). Minimal 20 karakter.")
+                st.error(f"Rangkuman terlalu pendek ({len(materi.strip())} karakter). Minimal 20 karakter.")
+            elif kelas_terpilih_obj is None:
+                st.error("Pilih kelas terlebih dahulu.")
             else:
-                idx_pilihan   = opsi_kelas.index(pilihan_kelas_label)
-                kelas_dipilih = kelas_mhs_aktif[idx_pilihan]
-                tgl           = waktu_sekarang.strftime("%Y-%m-%d")
-                jam           = waktu_sekarang.strftime("%H:%M:%S")
+                tgl = waktu_sekarang.strftime("%Y-%m-%d")
+                jam = waktu_sekarang.strftime("%H:%M:%S")
                 try:
                     sheet   = get_sheet()
-                    raw     = kelas_dipilih["makul"]
+                    raw     = kelas_terpilih_obj["makul"]
                     safe    = raw.replace("/","-").replace(":","-").replace("\\","-")
                     if len(safe) > 28:
                         suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
                         safe   = safe[:24] + "_" + suffix
                     ws      = get_or_create_worksheet(sheet, safe)
                     records = ws.get_all_records()
-
-                    sudah = any(
+                    sudah   = any(
                         str(r.get('NIM','')).strip() == nim.strip() and
-                        str(r.get('Pertemuan Ke','')) == str(kelas_dipilih["pertemuan"])
+                        str(r.get('Pertemuan Ke','')) == str(kelas_terpilih_obj["pertemuan"])
                         for r in records
                     )
                     if sudah:
-                        st.error(f"❌ NIM {nim} sudah terdaftar hadir pada Pertemuan Ke-{kelas_dipilih['pertemuan']}!")
+                        st.error(f"❌ NIM {nim} sudah terdaftar hadir pada Pertemuan Ke-{kelas_terpilih_obj['pertemuan']}!")
                     else:
                         simpan_ke_sheets({
                             "Tanggal":          tgl,
                             "Jam Isi":          jam,
-                            "Mata Kuliah":      kelas_dipilih["makul"],
-                            "Semester":         kelas_dipilih["semester"],
-                            "Pertemuan Ke":     kelas_dipilih["pertemuan"],
+                            "Mata Kuliah":      kelas_terpilih_obj["makul"],
+                            "Semester":         kelas_terpilih_obj["semester"],
+                            "Pertemuan Ke":     kelas_terpilih_obj["pertemuan"],
                             "NIM":              nim.strip(),
                             "Nama":             nama.strip(),
                             "Rangkuman Materi": materi.strip()
                         })
-                        nm_makul = kelas_dipilih['makul'].rsplit(' (', 1)[0]
+                        nm_makul = kelas_terpilih_obj['makul'].rsplit(' (', 1)[0]
                         st.session_state['konfirmasi_data'] = {
-                            "nama":      nama.strip(),
-                            "nim":       nim.strip(),
+                            "nama":      nama.strip(), "nim": nim.strip(),
                             "makul":     nm_makul,
-                            "makul_raw": kelas_dipilih["makul"],
-                            "tanggal":   tgl,
-                            "jam":       jam,
-                            "pertemuan": kelas_dipilih["pertemuan"],
-                            "semester":  kelas_dipilih["semester"],
+                            "makul_raw": kelas_terpilih_obj["makul"],
+                            "tanggal":   tgl, "jam": jam,
+                            "pertemuan": kelas_terpilih_obj["pertemuan"],
+                            "semester":  kelas_terpilih_obj["semester"],
                         }
                         st.session_state['sudah_presensi'] = True
                         st.balloons()
                         st.rerun()
                 except Exception as e:
                     st.error(f"Gagal menghubungi database: {e}")
-
-# ============================================================
-# HALAMAN CHAT — PILIH KELAS (MAHASISWA ONLY)
-# ============================================================
-elif st.session_state['halaman'] == 'chat_pilih':
-
-    col_back, _ = st.columns([1, 4])
-    with col_back:
-        if st.button("← Kembali", key="back_chat_pilih"):
-            ke_halaman('landing')
-
-    semua_kelas_aktif = baca_semua_kelas_aktif()
-
-    st.markdown("<h3 style='text-align:center;font-weight:700;'>💬 Ruang Chat Kelas</h3>", unsafe_allow_html=True)
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    sudah_presensi = st.session_state.get('sudah_presensi', False)
-    konfirmasi     = st.session_state.get('konfirmasi_data', None)
-
-    idx_prodi_chat = 0 if st.session_state['prodi'] == 'Bisnis Digital' else 1
-    prodi_chat = st.selectbox("🎓 Program Studi Anda:", ["Bisnis Digital", "Aktuaria"], index=idx_prodi_chat)
-    st.session_state['prodi'] = prodi_chat
-
-    jadwal_chat = DATA_JADWAL_AKT if prodi_chat == 'Aktuaria' else DATA_JADWAL_BD
-    dosen_chat = list(jadwal_chat.keys())
-    kelas_chat_aktif = [k for k in semua_kelas_aktif if k['dosen_key'] in dosen_chat]
-
-    if not kelas_chat_aktif:
-        st.info(f"🕒 Belum ada kelas aktif untuk Prodi {prodi_chat}.")
-
-    elif sudah_presensi and konfirmasi:
-        st.success(f"✅ Hadir sebagai **{konfirmasi['nama']}** di kelas **{konfirmasi['makul']}**")
-        st.markdown("<br>", unsafe_allow_html=True)
-        if st.button("💬 Lanjut ke Ruang Chat", use_container_width=True, key="btn_lanjut_chat"):
-            st.session_state['chat_nickname']      = konfirmasi['nama']
-            st.session_state['chat_kelas_dipilih'] = konfirmasi['makul_raw']
-            st.session_state['chat_role']          = 'mahasiswa'
-            ke_halaman('chat_room')
-
-    else:
-        st.markdown("""
-            <div style='background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);
-                border-radius:12px;padding:14px 18px;margin-bottom:20px;font-size:14px;'>
-                🧑‍🎓 <b>Untuk mahasiswa:</b> Isi presensi dulu agar nickname otomatis terisi.
-                Atau kamu bisa langsung masuk dengan mengisi nama di bawah.
-            </div>
-        """, unsafe_allow_html=True)
-
-        def label_kelas_chat(k):
-            nm = k['makul'].rsplit(' (', 1)[0]
-            nd = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
-            return f"{nm} | {nd} | Pertemuan {k['pertemuan']}"
-
-        with st.form(key="form_chat_masuk"):
-            opsi_kelas_chat  = [label_kelas_chat(k) for k in kelas_chat_aktif]
-            pilih_kelas_chat = st.selectbox("Pilih Kelas:", options=opsi_kelas_chat)
-            nickname_input   = st.text_input("Nama Kamu:", placeholder="Contoh: Budi Santoso")
-            st.markdown("<br>", unsafe_allow_html=True)
-            masuk_chat_btn   = st.form_submit_button("Masuk Ruang Chat 💬")
-
-        if masuk_chat_btn:
-            if not nickname_input.strip():
-                st.error("Nama wajib diisi!")
-            else:
-                idx       = opsi_kelas_chat.index(pilih_kelas_chat)
-                kelas_obj = kelas_chat_aktif[idx]
-                st.session_state['chat_nickname']      = nickname_input.strip()
-                st.session_state['chat_kelas_dipilih'] = kelas_obj['makul']
-                st.session_state['chat_role']          = 'mahasiswa'
-                ke_halaman('chat_room')
-
-# ============================================================
-# HALAMAN CHAT — RUANG CHAT
-# ============================================================
-elif st.session_state['halaman'] == 'chat_room':
-    nickname     = st.session_state.get('chat_nickname', 'Anonim')
-    kelas_id     = st.session_state.get('chat_kelas_dipilih', '')
-    role         = st.session_state.get('chat_role', 'mahasiswa')
-
-    nm_kelas = kelas_id.rsplit(' (', 1)[0] if ' (' in kelas_id else kelas_id
-    nd_kelas = kelas_id.rsplit(' (', 1)[-1].rstrip(')').split(',')[0] if ' (' in kelas_id else ''
-
-    col_back2, _ = st.columns([1, 4])
-    with col_back2:
-        if st.button("← Keluar Chat", key="back_chat_room"):
-            st.session_state['chat_nickname']      = None
-            st.session_state['chat_kelas_dipilih'] = None
-            ke_halaman('landing')
-
-    st.markdown(f"""
-        <div class="chat-room-header">
-            <span class="online-dot"></span>
-            <div>
-                <div style="font-weight:800;font-size:16px;">💬 {nm_kelas}</div>
-                <div style="font-size:12px;opacity:0.8;">👨‍🏫 {nd_kelas} &nbsp;·&nbsp; Live Chat</div>
-            </div>
-            <div style="margin-left:auto;">
-                {'<span class="chat-dosen-badge">DOSEN</span>' if role == 'dosen' else ''}
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-    st.caption(f"Kamu masuk sebagai: **{nickname}**")
-
-    col_reload, col_info = st.columns([1, 3])
-    with col_reload:
-        if st.button("🔄 Refresh Pesan", use_container_width=True, key="refresh_chat"):
-            st.rerun()
-    with col_info:
-        st.caption("💡 Klik Refresh untuk lihat pesan terbaru, atau kirim pesan untuk auto-refresh.")
-
-    pesan_list = baca_pesan_chat(kelas_id, limit=60)
-
-    if not pesan_list:
-        st.markdown("""
-            <div style="text-align:center;padding:40px;opacity:0.4;">
-                <div style="font-size:40px;">💬</div>
-                <div style="margin-top:10px;font-size:14px;">Belum ada pesan. Jadilah yang pertama!</div>
-            </div>
-        """, unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="chat-scroll-area">', unsafe_allow_html=True)
-        for msg in pesan_list:
-            is_self   = str(msg.get('nickname','')) == nickname
-            msg_role  = str(msg.get('role','mahasiswa'))
-            nick      = str(msg.get('nickname','?'))
-            ts_raw    = str(msg.get('timestamp',''))
-            pesan_txt = str(msg.get('pesan',''))
-
-            import html as html_lib
-            pesan_safe = html_lib.escape(pesan_txt)
-
-            try:
-                ts_obj  = datetime.strptime(ts_raw, "%Y-%m-%d %H:%M:%S")
-                ts_disp = ts_obj.strftime("%H:%M")
-            except Exception:
-                ts_disp = ts_raw[-5:] if len(ts_raw) >= 5 else ts_raw
-
-            is_dosen     = (msg_role == "dosen")
-            wrapper_cls  = "self" if is_self else ""
-            bubble_cls   = "self" if is_self else "other"
-            meta_cls     = "self" if is_self else ""
-            avatar_cls   = "dos" if is_dosen else "mhs"
-            avatar_letter = "D" if is_dosen else (nick[0].upper() if nick else "?")
-            nick_disp    = "Kamu" if is_self else html_lib.escape(nick)
-            dosen_tag    = '<span class="chat-dosen-badge" style="margin-left:4px;font-size:10px;">DOSEN</span>' if is_dosen else ""
-            name_align   = "text-align:right;" if is_self else ""
-
-            bubble_html = f"""<div class="chat-bubble-wrapper {wrapper_cls}">
-  <div class="chat-avatar {avatar_cls}">{avatar_letter}</div>
-  <div style="display:flex;flex-direction:column;{'align-items:flex-end;' if is_self else ''}">
-    <div style="font-size:11px;opacity:0.5;margin-bottom:3px;{name_align}">{nick_disp}{dosen_tag}</div>
-    <div class="chat-bubble {bubble_cls}">{pesan_safe}</div>
-    <span class="chat-meta {meta_cls}">{ts_disp} WIB</span>
-  </div>
-</div>"""
-            st.markdown(bubble_html, unsafe_allow_html=True)
-
-        st.markdown('</div>', unsafe_allow_html=True)
-
-    with st.form(key="form_kirim_pesan", clear_on_submit=True):
-        col_input, col_send = st.columns([5, 1])
-        with col_input:
-            pesan_baru = st.text_input("Tulis pesan...", placeholder=f"Pesan dari {nickname}...", label_visibility="collapsed")
-        with col_send:
-            kirim_btn = st.form_submit_button("Kirim")
-
-    if kirim_btn:
-        if pesan_baru.strip():
-            ok = kirim_pesan_chat(kelas_id, nickname, role, pesan_baru.strip())
-            if ok: st.rerun()
-        else:
-            st.warning("Pesan tidak boleh kosong.")
 
 # ============================================================
 # HALAMAN DOSEN
@@ -1003,11 +752,9 @@ elif st.session_state['halaman'] == 'dosen':
     if not st.session_state.get('dosen_login', False):
         st.markdown("<h3 style='text-align:center;font-weight:800;color:#6366F1;'>Autentikasi Dosen</h3>", unsafe_allow_html=True)
 
-        # Pemilihan Prodi untuk Filter Dosen
         idx_prodi_dosen = 0 if st.session_state['prodi'] == 'Bisnis Digital' else 1
         prodi_dosen = st.selectbox("Pilih Program Studi", ["Bisnis Digital", "Aktuaria"], index=idx_prodi_dosen)
         st.session_state['prodi'] = prodi_dosen
-        
         jadwal_aktif_login = DATA_JADWAL_AKT if prodi_dosen == 'Aktuaria' else DATA_JADWAL_BD
 
         with st.form(key="form_login_dosen"):
@@ -1038,19 +785,15 @@ elif st.session_state['halaman'] == 'dosen':
                 st.session_state['nama_dosen_login'] = None
                 ke_halaman('landing')
 
-        semua_kelas_aktif = baca_semua_kelas_aktif()
-        
-        # Cari Prodi dosen dari nama dosennya untuk tab monitor
-        prodi_dsn_sekarang = 'Aktuaria' if nama_dosen_aktif in DATA_JADWAL_AKT else 'Bisnis Digital'
-        jadwal_dsn_sekarang = DATA_JADWAL_AKT if prodi_dsn_sekarang == 'Aktuaria' else DATA_JADWAL_BD
-        dosen_valid = list(jadwal_dsn_sekarang.keys())
+        semua_kelas_aktif    = baca_semua_kelas_aktif()
+        prodi_dsn_sekarang   = 'Aktuaria' if nama_dosen_aktif in DATA_JADWAL_AKT else 'Bisnis Digital'
+        jadwal_dsn_sekarang  = DATA_JADWAL_AKT if prodi_dsn_sekarang == 'Aktuaria' else DATA_JADWAL_BD
+        dosen_valid          = list(jadwal_dsn_sekarang.keys())
         kelas_aktif_prodi_ini = [k for k in semua_kelas_aktif if k['dosen_key'] in dosen_valid]
 
-        tab1, tab2, tab3, tab4 = st.tabs(["🚀 Buka Kelas & QR", "📋 Monitor Kelas Aktif", "📂 Arsip & Histori", "💬 Chat Kelas"])
+        tab1, tab2, tab3 = st.tabs(["🚀 Buka Kelas & QR", "📋 Monitor Kelas Aktif", "📂 Arsip & Histori"])
 
-        # ─────────────────────────────────────────
-        # TAB 1 — BUKA KELAS & QR
-        # ─────────────────────────────────────────
+        # ─── TAB 1 — BUKA KELAS & QR ───────────────────────────
         with tab1:
             st.markdown("#### Aktivasi Perkuliahan")
             st.caption(f"Login sebagai: **{nama_dosen_aktif}** (Prodi {prodi_dsn_sekarang})")
@@ -1093,89 +836,105 @@ elif st.session_state['halaman'] == 'dosen':
                             st.rerun()
 
             st.markdown("---")
-            st.markdown("#### Generator QR Code")
+            st.markdown("#### 📲 Generator QR Code Presensi")
+            st.caption("QR ini langsung membuka form presensi dengan sesi kelas sudah terpilih otomatis.")
 
             try:
                 base_url_default = st.secrets.get("app_url", "https://your-app.streamlit.app")
             except Exception:
                 base_url_default = "https://your-app.streamlit.app"
 
-            url_aplikasi = st.text_input("Tautan URL Aplikasi:", value=base_url_default)
-            if st.button("Tampilkan QR Code", type="primary"):
-                if url_aplikasi:
-                    qr_image = generate_qr(url_aplikasi)
-                    st.image(qr_image, caption=f"Scan QR — {pilihan_makul} (P-{input_pertemuan})", width=250)
+            if status_dosen["aktif"]:
+                makul_qr    = status_dosen['makul']
+                smt_qr      = status_dosen['semester']
+                prt_qr      = status_dosen['pertemuan']
+                import urllib.parse
+                qr_url = (
+                    f"{base_url_default}"
+                    f"?makul={urllib.parse.quote(makul_qr)}"
+                    f"&semester={smt_qr}"
+                    f"&pertemuan={prt_qr}"
+                )
+                nm_qr = makul_qr.rsplit(' (', 1)[0]
+                st.success(f"QR untuk: **{nm_qr}** — Pertemuan {prt_qr}")
+                col_qr, col_info = st.columns([1, 1.5])
+                with col_qr:
+                    qr_bytes = generate_qr(qr_url)
+                    st.image(qr_bytes, width=220)
                     st.download_button(
-                        label="⬇️ Unduh Gambar QR", data=qr_image,
-                        file_name=f"QR_{pilihan_makul}_P{input_pertemuan}.png", mime="image/png"
+                        "⬇️ Download QR",
+                        data=qr_bytes,
+                        file_name=f"QR_P{prt_qr}_{nm_qr[:20]}.png",
+                        mime="image/png",
+                        use_container_width=True
                     )
-                else:
-                    st.warning("Masukkan URL terlebih dahulu.")
+                with col_info:
+                    st.markdown(f"""
+                        <div style='background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);
+                            border-radius:12px;padding:14px;font-size:13px;'>
+                            <b>Cara pakai:</b><br>
+                            1️⃣ Aktifkan kelas dulu (tombol di atas)<br>
+                            2️⃣ Tampilkan / print QR ini<br>
+                            3️⃣ Mahasiswa scan → langsung ke form<br>
+                            4️⃣ Sesi otomatis terpilih, tinggal isi nama & NIM
+                        </div>
+                    """, unsafe_allow_html=True)
+                    st.code(qr_url, language=None)
+            else:
+                st.warning("⚠️ Aktifkan kelas terlebih dahulu untuk generate QR.")
+                st.markdown(f"**URL App:** `{base_url_default}`")
+                st.caption("Isi `app_url` di secrets.toml dengan URL Streamlit app kamu.")
 
-        # ─────────────────────────────────────────
-        # TAB 2 — MONITOR KELAS AKTIF (KHUSUS PRODI DOSEN INI)
-        # ─────────────────────────────────────────
+        # ─── TAB 2 — MONITOR ────────────────────────────────────
         with tab2:
-            col_m, col_r = st.columns([4, 1])
-            with col_m:
-                st.metric(f"Total Kelas Berjalan (Prodi {prodi_dsn_sekarang})", f"{len(kelas_aktif_prodi_ini)} Kelas")
-            with col_r:
-                st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
-                if st.button("🔄 Reload", use_container_width=True, key="reload_mon"):
-                    st.rerun()
-            st.markdown("---")
+            st.markdown("#### Monitor Kelas Aktif")
+            if st.button("🔄 Refresh Data", use_container_width=True):
+                baca_semua_kelas_aktif_cached.clear()
+                hitung_hadir.clear()
+                st.rerun()
 
-            if kelas_aktif_prodi_ini:
-                for idx_k, k in enumerate(kelas_aktif_prodi_ini):
+            if not kelas_aktif_prodi_ini:
+                st.caption(f"Tidak ada kelas aktif saat ini untuk Prodi {prodi_dsn_sekarang}.")
+            else:
+                for k in kelas_aktif_prodi_ini:
                     nm = k['makul'].rsplit(' (', 1)[0]
                     nd = k['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
+                    jumlah = hitung_hadir(k['makul'], k['pertemuan'])
                     with st.container(border=True):
-                        col_info, col_btn = st.columns([4, 1])
-                        with col_info:
-                            st.markdown(
-                                f"📚 **{nm}**<br>"
-                                f"<span style='opacity:0.6;font-size:14px;'>👨‍🏫 {nd} | Smt {k['semester']} | Pertemuan {k['pertemuan']}</span>",
-                                unsafe_allow_html=True
-                            )
-                        with col_btn:
-                            if st.button("Tutup Paksa", key=f"tutup_{idx_k}", use_container_width=True):
-                                tutup_kelas_by_makul(k['makul'])
-                                st.toast(f"Kelas {nm} ditutup.", icon="🧹")
-                                st.rerun()
-
-                        with st.expander("Lihat mahasiswa yang sudah hadir"):
-                            try:
-                                raw   = k['makul']
-                                safe  = raw.replace("/","-").replace(":","-").replace("\\","-")
-                                if len(safe) > 28:
-                                    suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
-                                    safe   = safe[:24] + "_" + suffix
-                                ws_mon  = get_sheet().worksheet(safe)
-                                data_m  = ws_mon.get_all_records()
-                                df_m    = pd.DataFrame(data_m)
-                                df_mf   = df_m[df_m['Pertemuan Ke'].astype(str) == str(k['pertemuan'])]
-                                if not df_mf.empty:
-                                    st.success(f"**{len(df_mf)} mahasiswa** sudah hadir")
-                                    for i, row in df_mf.reset_index(drop=True).iterrows():
+                        c1, c2 = st.columns([3, 1])
+                        with c1:
+                            st.markdown(f"**{nm}**")
+                            st.caption(f"👨‍🏫 {nd} &nbsp;·&nbsp; Semester {k['semester']} &nbsp;·&nbsp; Pertemuan {k['pertemuan']}")
+                        with c2:
+                            st.metric("Hadir", jumlah)
+                        try:
+                            raw  = k['makul']
+                            safe = raw.replace("/","-").replace(":","-").replace("\\","-")
+                            if len(safe) > 28:
+                                suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
+                                safe   = safe[:24] + "_" + suffix
+                            ws_mon = get_sheet().worksheet(safe)
+                            data_mon = ws_mon.get_all_records()
+                            df_mf = pd.DataFrame(data_mon)
+                            df_mf = df_mf[df_mf['Pertemuan Ke'].astype(str) == str(k['pertemuan'])]
+                            if not df_mf.empty:
+                                with st.expander(f"Lihat {len(df_mf)} mahasiswa hadir"):
+                                    for i, row in df_mf.iterrows():
                                         st.markdown(
-                                            f"**{i+1}. {row['Nama']}** &nbsp;<span style='opacity:0.6;font-size:13px;'>({row['NIM']})</span>"
+                                            f"<b>{row['NIM']}</b> — {row['Nama']}"
                                             f"<br><span style='font-size:12px;opacity:0.5;'>🕒 {row['Jam Isi']} WIB</span>",
                                             unsafe_allow_html=True
                                         )
                                         if i < len(df_mf) - 1:
                                             st.markdown("<hr style='margin:6px 0;opacity:0.1;'>", unsafe_allow_html=True)
-                                else:
-                                    st.info("Belum ada mahasiswa yang hadir.")
-                            except gspread.exceptions.WorksheetNotFound:
-                                st.info("Belum ada data presensi.")
-                            except Exception as e:
-                                st.error(f"Error: {e}")
-            else:
-                st.caption(f"Tidak ada kelas aktif saat ini untuk Prodi {prodi_dsn_sekarang}.")
+                            else:
+                                st.info("Belum ada mahasiswa yang hadir.")
+                        except gspread.exceptions.WorksheetNotFound:
+                            st.info("Belum ada data presensi.")
+                        except Exception as e:
+                            st.error(f"Error: {e}")
 
-        # ─────────────────────────────────────────
-        # TAB 3 — ARSIP & HISTORI
-        # ─────────────────────────────────────────
+        # ─── TAB 3 — ARSIP ──────────────────────────────────────
         with tab3:
             st.markdown("#### Pusat Data Kehadiran")
             makul_opsi    = get_makul_dosen(nama_dosen_aktif)
@@ -1188,13 +947,13 @@ elif st.session_state['halaman'] == 'dosen':
                 with st.expander("📥 Unduh Master Rekap Semester (P1-P16)", expanded=False):
                     if st.button("Generate Rekap Global", use_container_width=True):
                         try:
-                            raw   = makul_gabung
-                            safe  = raw.replace("/","-").replace(":","-").replace("\\","-")
+                            raw  = makul_gabung
+                            safe = raw.replace("/","-").replace(":","-").replace("\\","-")
                             if len(safe) > 28:
                                 suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
                                 safe   = safe[:24] + "_" + suffix
-                            ws    = get_sheet().worksheet(safe)
-                            data  = ws.get_all_records()
+                            ws   = get_sheet().worksheet(safe)
+                            data = ws.get_all_records()
                             if data:
                                 df_all = pd.DataFrame(data)
                                 if 'Pertemuan Ke' in df_all.columns:
@@ -1214,16 +973,16 @@ elif st.session_state['halaman'] == 'dosen':
                 st.markdown("---")
                 col_f, col_a = st.columns([2, 1])
                 with col_f:
-                    opt_prt2      = [str(i) for i in range(1, 17)]
-                    pilih_prt_a   = st.selectbox("Lihat Pertemuan Ke-:", options=opt_prt2)
+                    opt_prt2    = [str(i) for i in range(1, 17)]
+                    pilih_prt_a = st.selectbox("Lihat Pertemuan Ke-:", options=opt_prt2)
                 with col_a:
                     st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
                     btn_tampil = st.button("Tampilkan Data", use_container_width=True)
 
                 if btn_tampil:
                     try:
-                        raw   = makul_gabung
-                        safe  = raw.replace("/","-").replace(":","-").replace("\\","-")
+                        raw  = makul_gabung
+                        safe = raw.replace("/","-").replace(":","-").replace("\\","-")
                         if len(safe) > 28:
                             suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
                             safe   = safe[:24] + "_" + suffix
@@ -1250,8 +1009,8 @@ elif st.session_state['halaman'] == 'dosen':
                 st.markdown("---")
                 st.markdown("##### 📜 Histori Log Kelas")
                 try:
-                    raw   = makul_gabung
-                    safe  = raw.replace("/","-").replace(":","-").replace("\\","-")
+                    raw  = makul_gabung
+                    safe = raw.replace("/","-").replace(":","-").replace("\\","-")
                     if len(safe) > 28:
                         suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
                         safe   = safe[:24] + "_" + suffix
@@ -1286,13 +1045,12 @@ elif st.session_state['halaman'] == 'dosen':
                 with col_h1:
                     nim_hapus = st.text_input("NIM yang akan dihapus", placeholder="Contoh: 220101001")
                 with col_h2:
-                    opt_prt3    = [str(i) for i in range(1, 17)]
-                    prt_hapus   = st.selectbox("Dari Pertemuan Ke-:", options=opt_prt3, key="hapus_prt")
-
+                    opt_prt3  = [str(i) for i in range(1, 17)]
+                    prt_hapus = st.selectbox("Dari Pertemuan Ke-:", options=opt_prt3, key="hapus_prt")
                 if st.button("🗑️ Hapus Entri Ini", type="primary", use_container_width=True):
                     if nim_hapus.strip():
-                        raw   = makul_gabung
-                        safe  = raw.replace("/","-").replace(":","-").replace("\\","-")
+                        raw  = makul_gabung
+                        safe = raw.replace("/","-").replace(":","-").replace("\\","-")
                         if len(safe) > 28:
                             suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
                             safe   = safe[:24] + "_" + suffix
@@ -1301,28 +1059,3 @@ elif st.session_state['halaman'] == 'dosen':
                         else:  st.error(f"❌ {pesan}")
                     else:
                         st.error("Masukkan NIM terlebih dahulu.")
-
-        # ─────────────────────────────────────────
-        # TAB 4 — CHAT DOSEN (dari dalam dashboard)
-        # ─────────────────────────────────────────
-        with tab4:
-            st.markdown("#### 💬 Live Chat Kelas — Panel Dosen")
-            st.caption("Masuk sebagai dosen ke ruang chat kelas aktif.")
-
-            if not kelas_aktif_prodi_ini:
-                st.info("Belum ada kelas aktif. Buka kelas dahulu di Tab 1.")
-            else:
-                def label_kelas_d(k):
-                    nm = k['makul'].rsplit(' (', 1)[0]
-                    return f"{nm} | Pertemuan {k['pertemuan']}"
-
-                opsi_chat_dosen = [label_kelas_d(k) for k in kelas_aktif_prodi_ini]
-                pilih_chat_dos  = st.selectbox("Pilih Kelas Chat:", options=opsi_chat_dosen, key="chat_dos_sel")
-
-                if st.button("Masuk Ruang Chat Kelas Ini 💬", use_container_width=True, key="dos_masuk_chat"):
-                    idx_d = opsi_chat_dosen.index(pilih_chat_dos)
-                    kelas_obj_d = kelas_aktif_prodi_ini[idx_d]
-                    st.session_state['chat_nickname']      = f"[Dosen] {nama_dosen_aktif.split(',')[0]}"
-                    st.session_state['chat_kelas_dipilih'] = kelas_obj_d['makul']
-                    st.session_state['chat_role']          = 'dosen'
-                    ke_halaman('chat_room')
