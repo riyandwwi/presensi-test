@@ -203,9 +203,10 @@ def get_sheet():
     client = gspread.authorize(creds)
     return client.open_by_key(SHEET_ID)
 
-STATUS_SHEET = "STATUS_KELAS"
+STATUS_SHEET  = "STATUS_KELAS"
+BATAS_JAM     = 24   # Kelas otomatis tutup setelah N jam
 
-# Cache baca kelas aktif 30 detik — kurangi hit API secara drastis
+# Cache baca kelas aktif 30 detik
 @st.cache_data(ttl=30)
 def baca_semua_kelas_aktif_cached():
     try:
@@ -213,13 +214,53 @@ def baca_semua_kelas_aktif_cached():
         try:
             ws = sheet.worksheet(STATUS_SHEET)
         except gspread.exceptions.WorksheetNotFound:
-            ws = sheet.add_worksheet(title=STATUS_SHEET, rows="50", cols="6")
-            ws.append_row(["makul","semester","pertemuan","aktif","dosen_key"])
+            ws = sheet.add_worksheet(title=STATUS_SHEET, rows="50", cols="7")
+            ws.append_row(["makul","semester","pertemuan","aktif","dosen_key","waktu_buka"])
             return []
         data = ws.get_all_records()
         return [r for r in data if str(r.get("aktif","0")) == "1"]
     except Exception as e:
         return []
+
+def cek_dan_tutup_kelas_kadaluarsa():
+    """Tutup otomatis kelas yang sudah >= BATAS_JAM jam aktif."""
+    try:
+        sheet  = get_sheet()
+        ws     = sheet.worksheet(STATUS_SHEET)
+        data   = ws.get_all_values()
+        if not data or len(data) < 2:
+            return
+        header = data[0]
+        try:
+            col_ak = header.index("aktif") + 1
+            col_wb = header.index("waktu_buka") + 1
+        except ValueError:
+            return
+        sekarang      = datetime.now(tz_wib)
+        ada_perubahan = False
+        for i, row in enumerate(data[1:], start=2):
+            if len(row) < max(col_ak, col_wb):
+                continue
+            if str(row[col_ak - 1]) != "1":
+                continue
+            waktu_buka_str = str(row[col_wb - 1]).strip()
+            if not waktu_buka_str:
+                continue
+            try:
+                waktu_buka_dt = datetime.fromisoformat(waktu_buka_str)
+                if waktu_buka_dt.tzinfo is None:
+                    waktu_buka_dt = tz_wib.localize(waktu_buka_dt)
+                selisih_jam = (sekarang - waktu_buka_dt).total_seconds() / 3600
+                if selisih_jam >= BATAS_JAM:
+                    ws.update_cell(i, col_ak, "0")
+                    ada_perubahan = True
+            except Exception:
+                continue
+        if ada_perubahan:
+            baca_semua_kelas_aktif_cached.clear()
+            baca_status_kelas_dosen_cached.clear()
+    except Exception:
+        pass
 
 def baca_semua_kelas_aktif():
     """Wrapper — tampilkan error hanya sekali per session."""
@@ -235,14 +276,15 @@ def baca_status_kelas_dosen_cached(dosen_key):
         for row in ws.get_all_records():
             if row.get("dosen_key","") == dosen_key:
                 return {
-                    "makul":     row.get("makul","Belum Diatur"),
-                    "semester":  str(row.get("semester","-")),
-                    "pertemuan": str(row.get("pertemuan","-")),
-                    "aktif":     str(row.get("aktif","0")) == "1",
+                    "makul":      row.get("makul","Belum Diatur"),
+                    "semester":   str(row.get("semester","-")),
+                    "pertemuan":  str(row.get("pertemuan","-")),
+                    "aktif":      str(row.get("aktif","0")) == "1",
+                    "waktu_buka": str(row.get("waktu_buka","")),
                 }
     except Exception:
         pass
-    return {"makul":"Belum Diatur","semester":"-","pertemuan":"-","aktif":False}
+    return {"makul":"Belum Diatur","semester":"-","pertemuan":"-","aktif":False,"waktu_buka":""}
 
 def baca_status_kelas_dosen(dosen_key):
     return baca_status_kelas_dosen_cached(dosen_key)
@@ -250,21 +292,21 @@ def baca_status_kelas_dosen(dosen_key):
 def tulis_status_kelas(makul, semester, pertemuan, dosen_key, aktif=True):
     sheet = get_sheet()
     try:    ws = sheet.worksheet(STATUS_SHEET)
-    except: ws = sheet.add_worksheet(title=STATUS_SHEET, rows="50", cols="6")
+    except: ws = sheet.add_worksheet(title=STATUS_SHEET, rows="50", cols="7")
     data   = ws.get_all_values()
     header = data[0] if data else []
     try:    col_dk = header.index("dosen_key") + 1
     except:
-        ws.append_row(["makul","semester","pertemuan","aktif","dosen_key"])
+        ws.append_row(["makul","semester","pertemuan","aktif","dosen_key","waktu_buka"])
         col_dk = 5
+    waktu_buka_str = datetime.now(tz_wib).isoformat() if aktif else ""
     row_idx = None
     for i, row in enumerate(data[1:], start=2):
         if len(row) >= col_dk and row[col_dk-1] == dosen_key:
             row_idx = i; break
-    new_row = [makul, semester, pertemuan, "1" if aktif else "0", dosen_key]
-    if row_idx: ws.update(f"A{row_idx}:E{row_idx}", [new_row])
+    new_row = [makul, semester, pertemuan, "1" if aktif else "0", dosen_key, waktu_buka_str]
+    if row_idx: ws.update(f"A{row_idx}:F{row_idx}", [new_row])
     else:       ws.append_row(new_row)
-    # Invalidasi cache setelah tulis
     baca_semua_kelas_aktif_cached.clear()
     baca_status_kelas_dosen_cached.clear()
 
@@ -474,6 +516,9 @@ if params.get("makul") and not st.session_state.get('qr_makul'):
     # Langsung arahkan ke halaman mahasiswa
     if st.session_state['halaman'] == 'landing':
         st.session_state['halaman'] = 'mahasiswa'
+
+# Cek kelas kadaluarsa setiap kali app diload
+cek_dan_tutup_kelas_kadaluarsa()
 
 # ============================================================
 # HEADER
@@ -804,8 +849,69 @@ elif st.session_state['halaman'] == 'dosen':
 
             status_dosen = baca_status_kelas_dosen(dosen_key)
             if status_dosen["aktif"]:
-                nm_aktif = status_dosen['makul'].rsplit(' (', 1)[0]
-                st.success(f"🟢 Kelas Aktif: **{nm_aktif}** (Smt {status_dosen['semester']} - Pertemuan {status_dosen['pertemuan']})")
+                nm_aktif     = status_dosen['makul'].rsplit(' (', 1)[0]
+                waktu_buka_s = status_dosen.get("waktu_buka", "")
+
+                # Hitung sisa waktu
+                sisa_info = ""
+                progres_pct = 0
+                waktu_buka_fmt = ""
+                if waktu_buka_s:
+                    try:
+                        wb_dt = datetime.fromisoformat(waktu_buka_s)
+                        if wb_dt.tzinfo is None:
+                            wb_dt = tz_wib.localize(wb_dt)
+                        sekarang_dt  = datetime.now(tz_wib)
+                        selisih_sek  = (sekarang_dt - wb_dt).total_seconds()
+                        sisa_sek     = max(0, BATAS_JAM * 3600 - selisih_sek)
+                        sisa_jam     = int(sisa_sek // 3600)
+                        sisa_menit   = int((sisa_sek % 3600) // 60)
+                        progres_pct  = min(100, int((selisih_sek / (BATAS_JAM * 3600)) * 100))
+                        waktu_buka_fmt = wb_dt.strftime("%d %b %Y, %H:%M WIB")
+                        if sisa_sek > 0:
+                            sisa_info = f"{sisa_jam} jam {sisa_menit} menit"
+                        else:
+                            sisa_info = "Hampir habis"
+                    except Exception:
+                        pass
+
+                st.success(f"🟢 Kelas Aktif: **{nm_aktif}** (Smt {status_dosen['semester']} — Pertemuan {status_dosen['pertemuan']})")
+
+                # Card info waktu
+                col_wb1, col_wb2 = st.columns(2)
+                with col_wb1:
+                    st.markdown(f"""
+                        <div style='background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);
+                            border-radius:10px;padding:12px 16px;'>
+                            <div style='font-size:11px;opacity:0.6;margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px'>Dibuka Sejak</div>
+                            <div style='font-weight:700;font-size:15px;color:#10B981'>{waktu_buka_fmt if waktu_buka_fmt else "—"}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                with col_wb2:
+                    warna_sisa = "#10B981" if progres_pct < 75 else ("#F59E0B" if progres_pct < 90 else "#EF4444")
+                    st.markdown(f"""
+                        <div style='background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);
+                            border-radius:10px;padding:12px 16px;'>
+                            <div style='font-size:11px;opacity:0.6;margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px'>Sisa Waktu (Auto-close {BATAS_JAM} jam)</div>
+                            <div style='font-weight:700;font-size:15px;color:{warna_sisa}'>{sisa_info if sisa_info else "—"}</div>
+                        </div>
+                    """, unsafe_allow_html=True)
+
+                # Progress bar
+                if progres_pct > 0:
+                    warna_bar = "#10B981" if progres_pct < 75 else ("#F59E0B" if progres_pct < 90 else "#EF4444")
+                    st.markdown(f"""
+                        <div style='margin-top:8px;'>
+                            <div style='display:flex;justify-content:space-between;font-size:11px;opacity:0.5;margin-bottom:4px;'>
+                                <span>Durasi terpakai</span>
+                                <span>{progres_pct}%</span>
+                            </div>
+                            <div style='background:rgba(128,128,128,0.15);border-radius:999px;height:6px;overflow:hidden;'>
+                                <div style='width:{progres_pct}%;background:{warna_bar};height:100%;border-radius:999px;transition:width .3s;'></div>
+                            </div>
+                        </div>
+                    """, unsafe_allow_html=True)
+                st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
             else:
                 st.info("⚪ Status: **Standby** — belum ada kelas aktif.")
 
@@ -936,125 +1042,158 @@ elif st.session_state['halaman'] == 'dosen':
 
         # ─── TAB 3 — ARSIP ──────────────────────────────────────
         with tab3:
-            st.markdown("#### Pusat Data Kehadiran")
+            st.markdown("#### 📂 Pusat Data Kehadiran")
+
             makul_opsi    = get_makul_dosen(nama_dosen_aktif)
             pilih_makul_a = st.selectbox("Pilih Mata Kuliah:", options=makul_opsi, key="arsip_makul")
             makul_gabung  = f"{pilih_makul_a} ({nama_dosen_aktif})"
 
-            sub1, sub2 = st.tabs(["📊 Lihat & Unduh", "🗑️ Hapus Entri Salah"])
+            def safe_name(raw):
+                s = raw.replace("/","-").replace(":","-").replace("\\","-")
+                if len(s) > 28:
+                    suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
+                    s = s[:24] + "_" + suffix
+                return s
 
+            # Load data untuk makul terpilih
+            df_makul = pd.DataFrame()
+            try:
+                ws_a = get_sheet().worksheet(safe_name(makul_gabung))
+                rec  = ws_a.get_all_records()
+                if rec:
+                    df_makul = pd.DataFrame(rec)
+            except gspread.exceptions.WorksheetNotFound:
+                pass
+            except Exception:
+                pass
+
+            sub1, sub2, sub3 = st.tabs(["📜 Histori & Detail", "📥 Unduh Data", "🗑️ Hapus Entri"])
+
+            # ── SUB TAB 1: HISTORI LENGKAP ──────────────────────
             with sub1:
-                with st.expander("📥 Unduh Master Rekap Semester (P1-P16)", expanded=False):
-                    if st.button("Generate Rekap Global", use_container_width=True):
-                        try:
-                            raw  = makul_gabung
-                            safe = raw.replace("/","-").replace(":","-").replace("\\","-")
-                            if len(safe) > 28:
-                                suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
-                                safe   = safe[:24] + "_" + suffix
-                            ws   = get_sheet().worksheet(safe)
-                            data = ws.get_all_records()
-                            if data:
-                                df_all = pd.DataFrame(data)
-                                if 'Pertemuan Ke' in df_all.columns:
-                                    df_all['_sort'] = pd.to_numeric(df_all['Pertemuan Ke'], errors='coerce')
-                                    df_all = df_all.sort_values(['_sort','NIM']).drop(columns=['_sort'])
-                                out = BytesIO(); df_all.to_excel(out, index=False, engine='openpyxl'); out.seek(0)
-                                st.success(f"{len(df_all)} total rekaman.")
-                                st.download_button("⬇️ Download Excel Rekap", data=out,
-                                    file_name=f"MASTER_{pilih_makul_a}.xlsx",
+                if df_makul.empty:
+                    st.info("Belum ada data presensi untuk mata kuliah ini.")
+                else:
+                    # Ringkasan total
+                    total_mhs_unik = df_makul['NIM'].nunique() if 'NIM' in df_makul.columns else 0
+                    total_prt      = df_makul['Pertemuan Ke'].nunique() if 'Pertemuan Ke' in df_makul.columns else 0
+                    total_presensi = len(df_makul)
+                    c1, c2, c3 = st.columns(3)
+                    c1.metric("Total Presensi", total_presensi)
+                    c2.metric("Mahasiswa Unik", total_mhs_unik)
+                    c3.metric("Pertemuan Tercatat", total_prt)
+                    st.markdown("---")
+
+                    # Histori per pertemuan + tabel mahasiswa
+                    st.markdown("##### Riwayat Semua Pertemuan")
+                    if 'Pertemuan Ke' in df_makul.columns:
+                        summ = df_makul.groupby('Pertemuan Ke').agg(
+                            total=('NIM','count'),
+                            tgl=('Tanggal','min')
+                        ).reset_index()
+                        summ['_s'] = pd.to_numeric(summ['Pertemuan Ke'], errors='coerce')
+                        summ = summ.sort_values('_s', ascending=False).drop(columns=['_s'])
+
+                        for _, rh in summ.iterrows():
+                            prt_num = rh['Pertemuan Ke']
+                            df_prt  = df_makul[df_makul['Pertemuan Ke'].astype(str) == str(prt_num)]
+
+                            with st.expander(
+                                f"📅 Pertemuan Ke-{prt_num}  ·  {rh['tgl']}  ·  🎓 {rh['total']} Mahasiswa Hadir",
+                                expanded=False
+                            ):
+                                # Tabel mahasiswa
+                                cols_tampil = [c for c in ['NIM','Nama','Jam Isi','Semester','Rangkuman Materi'] if c in df_prt.columns]
+                                df_show = df_prt[cols_tampil].reset_index(drop=True)
+                                df_show.index += 1
+                                st.dataframe(df_show, use_container_width=True)
+
+                                # Download per pertemuan
+                                out_p = BytesIO()
+                                df_show.to_excel(out_p, index=False, engine='openpyxl')
+                                out_p.seek(0)
+                                st.download_button(
+                                    f"⬇️ Download Excel Pertemuan {prt_num}",
+                                    data=out_p,
+                                    file_name=f"P{prt_num}_{pilih_makul_a[:25]}.xlsx",
                                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                                    use_container_width=True)
-                            else:
-                                st.info("Database masih kosong.")
-                        except gspread.exceptions.WorksheetNotFound:
-                            st.info("Belum ada sheet untuk mata kuliah ini.")
-
-                st.markdown("---")
-                col_f, col_a = st.columns([2, 1])
-                with col_f:
-                    opt_prt2    = [str(i) for i in range(1, 17)]
-                    pilih_prt_a = st.selectbox("Lihat Pertemuan Ke-:", options=opt_prt2)
-                with col_a:
-                    st.markdown("<div style='margin-top:28px'></div>", unsafe_allow_html=True)
-                    btn_tampil = st.button("Tampilkan Data", use_container_width=True)
-
-                if btn_tampil:
-                    try:
-                        raw  = makul_gabung
-                        safe = raw.replace("/","-").replace(":","-").replace("\\","-")
-                        if len(safe) > 28:
-                            suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
-                            safe   = safe[:24] + "_" + suffix
-                        ws   = get_sheet().worksheet(safe)
-                        data = ws.get_all_records()
-                        if data:
-                            df_f = pd.DataFrame(data)
-                            df_f = df_f[df_f['Pertemuan Ke'].astype(str) == str(pilih_prt_a)]
-                            if not df_f.empty:
-                                if "Mata Kuliah" in df_f.columns:
-                                    df_f = df_f.drop(columns=["Mata Kuliah"])
-                                st.dataframe(df_f, use_container_width=True)
-                                out = BytesIO(); df_f.to_excel(out, index=False, engine='openpyxl'); out.seek(0)
-                                st.download_button("⬇️ Unduh Excel Sesi Ini", data=out,
-                                    file_name=f"Sesi_{pilih_prt_a}_{pilih_makul_a}.xlsx",
-                                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-                            else:
-                                st.warning("Belum ada mahasiswa hadir di sesi ini.")
-                        else:
-                            st.info("Belum ada data presensi.")
-                    except gspread.exceptions.WorksheetNotFound:
-                        st.info("Sheet belum tersedia.")
-
-                st.markdown("---")
-                st.markdown("##### 📜 Histori Log Kelas")
-                try:
-                    raw  = makul_gabung
-                    safe = raw.replace("/","-").replace(":","-").replace("\\","-")
-                    if len(safe) > 28:
-                        suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
-                        safe   = safe[:24] + "_" + suffix
-                    ws   = get_sheet().worksheet(safe)
-                    data = ws.get_all_records()
-                    if data:
-                        df_h = pd.DataFrame(data)
-                        if 'Pertemuan Ke' in df_h.columns:
-                            summ = df_h.groupby('Pertemuan Ke').agg(
-                                total=('NIM','count'), tgl=('Tanggal','min')
-                            ).reset_index()
-                            summ['_s'] = pd.to_numeric(summ['Pertemuan Ke'], errors='coerce')
-                            summ = summ.sort_values('_s', ascending=False).drop(columns=['_s'])
-                            for _, rh in summ.iterrows():
-                                st.markdown(f"""
-                                    <div class="histori-container">
-                                        <div style="display:flex;justify-content:space-between;">
-                                            <span>📅 <b>Pertemuan Ke-{rh['Pertemuan Ke']}</b></span>
-                                            <span style="color:#10B981;font-weight:600;">{rh['total']} Hadir</span>
-                                        </div>
-                                        <span style='font-size:12px;opacity:0.5;'>Tanggal: {rh['tgl']}</span>
-                                    </div>
-                                """, unsafe_allow_html=True)
+                                    key=f"dl_prt_{prt_num}"
+                                )
                     else:
-                        st.caption("Belum ada riwayat kelas.")
-                except Exception:
-                    st.caption("Histori belum tersedia.")
+                        st.warning("Kolom 'Pertemuan Ke' tidak ditemukan di data.")
 
+            # ── SUB TAB 2: UNDUH ────────────────────────────────
             with sub2:
+                st.markdown("##### Download Rekap Master Semester")
+                if df_makul.empty:
+                    st.info("Belum ada data untuk diunduh.")
+                else:
+                    df_dl = df_makul.copy()
+                    if 'Pertemuan Ke' in df_dl.columns:
+                        df_dl['_sort'] = pd.to_numeric(df_dl['Pertemuan Ke'], errors='coerce')
+                        df_dl = df_dl.sort_values(['_sort','NIM']).drop(columns=['_sort'])
+                    out_all = BytesIO()
+                    df_dl.to_excel(out_all, index=False, engine='openpyxl')
+                    out_all.seek(0)
+                    st.success(f"✅ {len(df_dl)} total rekaman tersedia.")
+                    st.download_button(
+                        "⬇️ Download Excel Rekap Lengkap",
+                        data=out_all,
+                        file_name=f"MASTER_{pilih_makul_a[:30]}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True
+                    )
+
+                st.markdown("---")
+                st.markdown("##### Download Per Pertemuan")
+                if not df_makul.empty and 'Pertemuan Ke' in df_makul.columns:
+                    pertemuan_tersedia = sorted(
+                        df_makul['Pertemuan Ke'].unique().tolist(),
+                        key=lambda x: int(x) if str(x).isdigit() else 0
+                    )
+                    pilih_prt_dl = st.selectbox(
+                        "Pilih Pertemuan:",
+                        options=pertemuan_tersedia,
+                        key="dl_prt_sel"
+                    )
+                    df_prt_dl = df_makul[df_makul['Pertemuan Ke'].astype(str) == str(pilih_prt_dl)]
+                    st.info(f"{len(df_prt_dl)} mahasiswa hadir di pertemuan {pilih_prt_dl}")
+                    cols_t = [c for c in ['NIM','Nama','Jam Isi','Semester','Rangkuman Materi'] if c in df_prt_dl.columns]
+                    st.dataframe(df_prt_dl[cols_t].reset_index(drop=True), use_container_width=True)
+                    out_prt = BytesIO()
+                    df_prt_dl[cols_t].to_excel(out_prt, index=False, engine='openpyxl')
+                    out_prt.seek(0)
+                    st.download_button(
+                        f"⬇️ Download Pertemuan {pilih_prt_dl}",
+                        data=out_prt,
+                        file_name=f"P{pilih_prt_dl}_{pilih_makul_a[:25]}.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                        use_container_width=True,
+                        key="dl_prt_btn"
+                    )
+                else:
+                    st.info("Belum ada data pertemuan tersedia.")
+
+            # ── SUB TAB 3: HAPUS ENTRI ──────────────────────────
+            with sub3:
                 st.warning("⚠️ Gunakan fitur ini hanya untuk menghapus entri yang salah (NIM typo, dll).")
                 col_h1, col_h2 = st.columns(2)
                 with col_h1:
                     nim_hapus = st.text_input("NIM yang akan dihapus", placeholder="Contoh: 220101001")
                 with col_h2:
-                    opt_prt3  = [str(i) for i in range(1, 17)]
-                    prt_hapus = st.selectbox("Dari Pertemuan Ke-:", options=opt_prt3, key="hapus_prt")
+                    # Tampilkan pertemuan yang memang ada datanya
+                    if not df_makul.empty and 'Pertemuan Ke' in df_makul.columns:
+                        prt_ada = sorted(
+                            df_makul['Pertemuan Ke'].unique().tolist(),
+                            key=lambda x: int(x) if str(x).isdigit() else 0
+                        )
+                    else:
+                        prt_ada = [str(i) for i in range(1, 17)]
+                    prt_hapus = st.selectbox("Dari Pertemuan Ke-:", options=prt_ada, key="hapus_prt")
+
                 if st.button("🗑️ Hapus Entri Ini", type="primary", use_container_width=True):
                     if nim_hapus.strip():
-                        raw  = makul_gabung
-                        safe = raw.replace("/","-").replace(":","-").replace("\\","-")
-                        if len(safe) > 28:
-                            suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
-                            safe   = safe[:24] + "_" + suffix
-                        ok, pesan = hapus_entri_presensi(safe, nim_hapus.strip(), prt_hapus)
+                        ok, pesan = hapus_entri_presensi(safe_name(makul_gabung), nim_hapus.strip(), prt_hapus)
                         if ok: st.success(f"✅ {pesan}")
                         else:  st.error(f"❌ {pesan}")
                     else:
