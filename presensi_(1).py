@@ -504,17 +504,77 @@ DATA_JADWAL_BD = {
 # --- Data Dosen Aktuaria ---
 # Silakan sesuaikan nama dosen dan list makul di bawah dengan excel data Aktuaria Anda.
 DATA_JADWAL_AKT = {
-    "Dosen Aktuaria 1, S.Si., M.Si.": [
-        "Matematika Keuangan (Sebelum UTS)",
-        "Matematika Keuangan (Setelah UTS)",
-        "Teori Risiko (Sebelum UTS)",
-        "Teori Risiko (Setelah UTS)"
+    "Miftahul Jannah, S.Pd., M.Mat.": [
+        "Algoritma dan Pemrogaman I A (Sebelum UTS)",
+        "Pengantar Teori Ekonomi Mikro A (Sebelum UTS)",
+        "Pengantar Teori Ekonomi Mikro A (Setelah UTS)",
+        "Pengantar Akuntansi I A (Setelah UTS)",
+        "Algoritma dan Pemrogaman I B (Sebelum UTS)",
+        "Pengantar Teori Ekonomi Mikro B (Sebelum UTS)",
+        "Pengantar Teori Ekonomi Mikro B (Setelah UTS)",
+        "Pengantar Akuntansi I B (Setelah UTS)"
     ],
-    "Dosen Aktuaria 2, S.Si., M.Act.Sc.": [
-        "Statistika Matematika (Sebelum UTS)",
-        "Statistika Matematika (Setelah UTS)",
-        "Model Survival (Sebelum UTS)",
-        "Model Survival (Setelah UTS)"
+    "Adin Nadiya Ifati, S.Pd., M.Mat.": [
+        "Algoritma dan Pemrogaman I A (Setelah UTS)",
+        "Pengantar Akuntansi I A (Sebelum UTS)",
+        "Kalkulus II A (Sebelum UTS)",
+        "Kalkulus II A (Setelah UTS)",
+        "Algoritma dan Pemrogaman I B (Setelah UTS)",
+        "Pengantar Akuntansi I B (Sebelum UTS)",
+        "Kalkulus II B (Sebelum UTS)",
+        "Kalkulus II B (Setelah UTS)"
+    ],
+    "Rifki Chandra Utama, S.Si., M.Sc.": [
+        "Matematika Keuangan I A (Sebelum UTS)",
+        "Matematika Keuangan I A (Setelah UTS)",
+        "Matematika Keuangan I B (Sebelum UTS)",
+        "Matematika Keuangan I B (Setelah UTS)",
+        "Pengantar Matematika Aktuaria II (Sebelum UTS)",
+        "Pengantar Matematika Aktuaria II (Setelah UTS)",
+        "Pengantar Teori Risiko I (Sebelum UTS)",
+        "Pengantar Teori Risiko I (Setelah UTS)",
+        "Pengelolaan Dana Pensiun (Sebelum UTS)",
+        "Pengelolaan Dana Pensiun (Setelah UTS)"
+    ],
+    "Nour Muhammed Moussa Al-Fattah, S.Ag., M.Pd.": [
+        "Al-Islam dan Kemuhammadiyahan II A (Sebelum UTS)",
+        "Al-Islam dan Kemuhammadiyahan II A (Setelah UTS)",
+        "Al-Islam dan Kemuhammadiyahan II B (Sebelum UTS)",
+        "Al-Islam dan Kemuhammadiyahan II B (Setelah UTS)",
+        "Al-Islam dan Kemuhammadiyahan IV (Sebelum UTS)",
+        "Al-Islam dan Kemuhammadiyahan IV (Setelah UTS)"
+    ],
+    "Juwita Dien Maulida, S.Stat., M.Sc.": [
+        "Pengantar Teori Probabilitas A (Sebelum UTS)",
+        "Pengantar Teori Probabilitas A (Setelah UTS)",
+        "Pengantar Teori Probabilitas B (Sebelum UTS)",
+        "Pengantar Teori Probabilitas B (Setelah UTS)",
+        "Proses Stokastik (Sebelum UTS)",
+        "Proses Stokastik (Setelah UTS)"
+    ],
+    "Doni Uji Windiatmoko, S.Pd., M.Pd.": [
+        "Kewarganegaraan A (Sebelum UTS)",
+        "Kewarganegaraan A (Setelah UTS)",
+        "Kewarganegaraan B (Sebelum UTS)",
+        "Kewarganegaraan B (Setelah UTS)"
+    ],
+    "Ridhwan Sinatria, S.E., M.M.": [
+        "Kewirausahaan (Sebelum UTS)",
+        "Kewirausahaan (Setelah UTS)"
+    ],
+    "Nestria Agista, S.Stat., M.Sc.": [
+        "Analisis Regresi (Sebelum UTS)",
+        "Analisis Regresi (Setelah UTS)",
+        "Statistika Matematika II (Sebelum UTS)",
+        "Statistika Matematika II (Setelah UTS)"
+    ],
+    "Purwati, M.Hum.": [
+        "Bahasa Inggris II (Sebelum UTS)",
+        "Bahasa Inggris II (Setelah UTS)"
+    ],
+    "Kartika Dewi Permatasari, S.AK., M.AK., AK.": [
+        "Perpajakan (Sebelum UTS)",
+        "Perpajakan (Setelah UTS)"
     ]
 }
 
