@@ -38,7 +38,7 @@ for k, v in DEFAULTS.items():
 st.set_page_config(page_title="Presensi Bisnis Digital", page_icon="📝", layout="centered")
 
 # ============================================================
-# CSS — DARK MODE COMPATIBLE
+# CSS — DARK MODE COMPATIBLE (FULL FIX)
 # ============================================================
 st.markdown("""
 <style>
@@ -50,11 +50,11 @@ html, body, [class*="css"] {
 header {visibility:hidden;} footer {visibility:hidden;} #MainMenu {visibility:hidden;}
 
 /* ── Adaptive Background ── */
-.stApp {
-    background: var(--background-color);
-}
+.stApp { background: var(--background-color); }
 
-/* ── Header Banner ── */
+/* ══════════════════════════════════════════
+   HEADER BANNER
+══════════════════════════════════════════ */
 .header-banner {
     background: linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%);
     padding: 25px; border-radius: 16px; color: white;
@@ -64,7 +64,9 @@ header {visibility:hidden;} footer {visibility:hidden;} #MainMenu {visibility:hi
 .header-banner h1 { color:white !important; font-weight:800; font-size:28px; margin-bottom:5px; }
 .header-banner p  { color:#E0E7FF !important; font-size:15px; opacity:0.9; margin:0; }
 
-/* ── Form Wrapper ── */
+/* ══════════════════════════════════════════
+   FORM WRAPPER
+══════════════════════════════════════════ */
 div[data-testid="stForm"] {
     background: var(--secondary-background-color) !important;
     border: 1px solid rgba(128,128,128,0.2) !important;
@@ -72,15 +74,16 @@ div[data-testid="stForm"] {
     box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
 }
 
-/* ── Input Fields — Dark Mode Safe ── */
+/* ══════════════════════════════════════════
+   TEXT INPUT & TEXTAREA
+══════════════════════════════════════════ */
 div[data-testid="stTextInput"] input,
 div[data-testid="stTextArea"] textarea,
-div[data-testid="stSelectbox"] > div > div {
+div[data-testid="stNumberInput"] input {
     background-color: var(--secondary-background-color) !important;
     color: var(--text-color) !important;
     border: 1.5px solid rgba(128,128,128,0.35) !important;
     border-radius: 10px !important;
-    padding: 12px 16px !important;
     font-size: 15px !important;
     transition: all 0.3s ease !important;
 }
@@ -89,17 +92,107 @@ div[data-testid="stTextArea"] textarea:focus {
     border-color: #6366F1 !important;
     box-shadow: 0 0 0 4px rgba(99,102,241,0.15) !important;
 }
+/* placeholder warna adaptif */
+div[data-testid="stTextInput"] input::placeholder,
+div[data-testid="stTextArea"] textarea::placeholder {
+    color: var(--text-color) !important;
+    opacity: 0.4 !important;
+}
 
-/* ── Labels ── */
+/* ══════════════════════════════════════════
+   SELECTBOX / DROPDOWN — FULL FIX
+══════════════════════════════════════════ */
+/* Kontainer utama selectbox */
+div[data-testid="stSelectbox"] > div[data-baseweb="select"] > div,
+div[data-testid="stSelectbox"] > div > div[data-baseweb="select"] > div {
+    background-color: var(--secondary-background-color) !important;
+    border: 1.5px solid rgba(128,128,128,0.35) !important;
+    border-radius: 10px !important;
+}
+/* Teks yang tampil di selectbox */
+div[data-baseweb="select"] span,
+div[data-baseweb="select"] div,
+div[data-testid="stSelectbox"] span {
+    color: var(--text-color) !important;
+    background-color: transparent !important;
+}
+/* Ikon panah dropdown */
+div[data-baseweb="select"] svg {
+    fill: var(--text-color) !important;
+    opacity: 0.6;
+}
+/* Hover state kontainer */
+div[data-baseweb="select"] > div:hover {
+    border-color: #6366F1 !important;
+}
+/* ── Dropdown MENU (popover/listbox) ── */
+div[data-baseweb="popover"],
+div[data-baseweb="popover"] > div,
+ul[data-baseweb="menu"],
+div[role="listbox"],
+div[data-baseweb="menu"] {
+    background-color: var(--secondary-background-color) !important;
+    border: 1px solid rgba(128,128,128,0.25) !important;
+    border-radius: 10px !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18) !important;
+}
+/* ── Item dalam dropdown list ── */
+li[role="option"],
+div[role="option"] {
+    background-color: var(--secondary-background-color) !important;
+    color: var(--text-color) !important;
+}
+li[role="option"]:hover,
+div[role="option"]:hover,
+li[aria-selected="true"],
+div[aria-selected="true"] {
+    background-color: rgba(99,102,241,0.15) !important;
+    color: var(--text-color) !important;
+}
+/* BaseUI list container */
+[data-baseweb="menu"] ul li,
+[data-baseweb="list"] li {
+    background-color: var(--secondary-background-color) !important;
+    color: var(--text-color) !important;
+}
+[data-baseweb="menu"] ul li:hover {
+    background-color: rgba(99,102,241,0.12) !important;
+}
+/* fallback lebar untuk semua div di dalam select */
+div[data-testid="stSelectbox"] * {
+    color: var(--text-color) !important;
+}
+
+/* ══════════════════════════════════════════
+   RADIO BUTTON
+══════════════════════════════════════════ */
+div[data-testid="stRadio"] label,
+div[data-testid="stRadio"] p {
+    color: var(--text-color) !important;
+}
+div[data-testid="stRadio"] > div {
+    background: var(--secondary-background-color) !important;
+    border: 1px solid rgba(128,128,128,0.2) !important;
+    border-radius: 10px !important;
+    padding: 4px !important;
+}
+
+/* ══════════════════════════════════════════
+   ALL LABELS (global)
+══════════════════════════════════════════ */
+label, .stLabel, p.st-emotion-cache-ue6h4q,
 div[data-testid="stTextInput"] label,
 div[data-testid="stTextArea"] label,
-div[data-testid="stSelectbox"] label {
+div[data-testid="stSelectbox"] label,
+div[data-testid="stRadio"] label {
     color: var(--text-color) !important;
     font-weight: 600 !important;
     font-size: 14px !important;
 }
 
-/* ── Buttons ── */
+/* ══════════════════════════════════════════
+   BUTTONS
+══════════════════════════════════════════ */
 button[kind="formSubmit"] {
     background: linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%) !important;
     color: white !important; border: none !important; border-radius: 12px !important;
@@ -110,6 +203,136 @@ button[kind="formSubmit"] {
 button[kind="formSubmit"]:hover {
     box-shadow: 0 6px 20px rgba(79,70,229,0.45) !important;
     transform: translateY(-1px) !important;
+}
+/* Regular buttons dark mode */
+button[kind="secondary"],
+button[data-testid="baseButton-secondary"] {
+    background-color: var(--secondary-background-color) !important;
+    color: var(--text-color) !important;
+    border: 1px solid rgba(128,128,128,0.3) !important;
+    border-radius: 10px !important;
+}
+button[kind="secondary"]:hover,
+button[data-testid="baseButton-secondary"]:hover {
+    border-color: #6366F1 !important;
+    color: #6366F1 !important;
+}
+
+/* ══════════════════════════════════════════
+   CONTAINER (border=True) — DASHBOARD
+══════════════════════════════════════════ */
+div[data-testid="stVerticalBlockBorderWrapper"],
+div[data-testid="stVerticalBlockBorderWrapper"] > div {
+    background-color: var(--secondary-background-color) !important;
+    border: 1px solid rgba(128,128,128,0.2) !important;
+    border-radius: 12px !important;
+}
+
+/* ══════════════════════════════════════════
+   TABS — dark mode
+══════════════════════════════════════════ */
+div[data-testid="stTabs"] > div:first-child {
+    border-bottom: 2px solid rgba(128,128,128,0.15) !important;
+}
+button[data-baseweb="tab"] {
+    color: var(--text-color) !important;
+    background: transparent !important;
+    opacity: 0.6;
+}
+button[data-baseweb="tab"][aria-selected="true"] {
+    color: #6366F1 !important;
+    opacity: 1;
+    border-bottom-color: #6366F1 !important;
+}
+div[data-testid="stTabsContent"] {
+    background: transparent !important;
+}
+
+/* ══════════════════════════════════════════
+   METRIC WIDGET
+══════════════════════════════════════════ */
+div[data-testid="stMetric"] {
+    background: var(--secondary-background-color) !important;
+    border: 1px solid rgba(128,128,128,0.2) !important;
+    border-radius: 12px !important;
+    padding: 12px 16px !important;
+}
+div[data-testid="stMetricValue"],
+div[data-testid="stMetricLabel"] {
+    color: var(--text-color) !important;
+}
+
+/* ══════════════════════════════════════════
+   EXPANDER
+══════════════════════════════════════════ */
+details[data-testid="stExpander"] > summary {
+    background: var(--secondary-background-color) !important;
+    color: var(--text-color) !important;
+    border: 1px solid rgba(128,128,128,0.2) !important;
+    border-radius: 8px !important;
+}
+details[data-testid="stExpander"] > summary:hover {
+    border-color: #6366F1 !important;
+}
+div[data-testid="stExpanderDetails"] {
+    background: var(--secondary-background-color) !important;
+    border: 1px solid rgba(128,128,128,0.15) !important;
+    border-top: none !important;
+    border-radius: 0 0 8px 8px !important;
+    color: var(--text-color) !important;
+}
+
+/* ══════════════════════════════════════════
+   ALERT BOXES (success/info/warning/error)
+══════════════════════════════════════════ */
+div[data-testid="stAlert"] {
+    border-radius: 10px !important;
+}
+/* Info */
+div[data-testid="stAlert"][data-baseweb="notification"][kind="info"] {
+    background: rgba(99,102,241,0.1) !important;
+    border: 1px solid rgba(99,102,241,0.25) !important;
+}
+/* Success */
+div[data-testid="stAlert"][kind="success"],
+div.stSuccess > div {
+    background: rgba(16,185,129,0.1) !important;
+    border: 1px solid rgba(16,185,129,0.3) !important;
+}
+/* Warning */
+div[data-testid="stAlert"][kind="warning"],
+div.stWarning > div {
+    background: rgba(251,191,36,0.1) !important;
+    border: 1px solid rgba(251,191,36,0.3) !important;
+}
+
+/* ══════════════════════════════════════════
+   DATAFRAME
+══════════════════════════════════════════ */
+div[data-testid="stDataFrame"],
+iframe[title="st_dataframe"] {
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    border: 1px solid rgba(128,128,128,0.2) !important;
+}
+
+/* ══════════════════════════════════════════
+   SELECTBOX PASSWORD INPUT
+══════════════════════════════════════════ */
+input[type="password"] {
+    background-color: var(--secondary-background-color) !important;
+    color: var(--text-color) !important;
+    border: 1.5px solid rgba(128,128,128,0.35) !important;
+    border-radius: 10px !important;
+}
+
+/* ══════════════════════════════════════════
+   CAPTION & SMALL TEXT
+══════════════════════════════════════════ */
+div[data-testid="stCaptionContainer"] p,
+small, .stCaption {
+    color: var(--text-color) !important;
+    opacity: 0.55;
 }
 
 /* ── Clock Box ── */
