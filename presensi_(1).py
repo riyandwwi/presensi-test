@@ -1356,7 +1356,7 @@ elif st.session_state['halaman'] == 'dosen':
             else:
                 st.warning("⚠️ Aktifkan kelas terlebih dahulu untuk generate QR.")
                 st.markdown(f"**URL App:** `{base_url_default}`")
-                st.caption("Isi `app_url` di secrets.toml dengan URL Streamlit app kamu.")
+               
 
         # ─── TAB 2 — MONITOR KELAS AKTIF ────────────────────
         with tab2:
