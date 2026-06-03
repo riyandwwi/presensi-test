@@ -525,7 +525,7 @@ def get_sheet():
     return client.open_by_key(SHEET_ID)
 
 STATUS_SHEET = "STATUS_KELAS"
-BATAS_JAM    = 24   # Kelas otomatis tutup setelah N jam
+BATAS_JAM    = 8   # Kelas otomatis tutup setelah N jam
 
 @st.cache_data(ttl=30)
 def baca_semua_kelas_aktif_cached():
