@@ -156,9 +156,9 @@ def validasi_nim(nim: str) -> tuple[bool, str]:
     nim_clean = nim.strip()
     if not nim_clean.isdigit():
         return False, "NIM hanya boleh berisi angka (tanpa huruf atau karakter lain)."
-    if len(nim_clean) < 9:
+    if len(nim_clean) < 7:
         return False, f"NIM terlalu pendek ({len(nim_clean)} digit). Minimal 9 digit."
-    if len(nim_clean) > 12:
+    if len(nim_clean) > 8:
         return False, f"NIM terlalu panjang ({len(nim_clean)} digit). Maksimal 12 digit."
     return True, nim_clean
 
