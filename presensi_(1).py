@@ -10,6 +10,106 @@ import hashlib
 import urllib.parse
 import re
 import time
+import threading
+import queue
+import uuid
+
+# ============================================================
+# ANTRIAN PRESENSI — Queue-based Batch Writer
+# ============================================================
+# Arsitektur: semua submit mahasiswa masuk ke _antrian_presensi (in-memory queue).
+# Satu background thread (_worker_presensi) membaca antrian satu per satu dan
+# menulis ke Google Sheets → tidak ada dua request menulis secara bersamaan.
+#
+# Flow:
+#   submit() → put(job) ke queue → return token (UUID)
+#   background thread → ambil job → tulis Sheets → simpan hasil di _hasil_presensi
+#   UI → polling _hasil_presensi[token] setiap rerun → tampilkan sukses/error
+#
+# Manfaat:
+#   - Tidak ada race condition / write conflict
+#   - Rate limit 429 hanya terjadi di worker (bukan di semua user serentak)
+#   - UI tetap responsif; mahasiswa tidak stuck loading
+# ============================================================
+
+_antrian_presensi: queue.Queue = queue.Queue()
+
+# Dict: token -> {"status": "pending"|"ok"|"error", "pesan": str}
+_hasil_presensi: dict = {}
+_hasil_lock = threading.Lock()
+
+_worker_berjalan = False
+_worker_lock     = threading.Lock()
+
+def _worker_presensi():
+    """Background thread: ambil job dari antrian, tulis ke Sheets satu per satu."""
+    while True:
+        try:
+            job = _antrian_presensi.get(timeout=30)
+        except queue.Empty:
+            # Tidak ada pekerjaan 30 detik → thread berhenti (akan respawn saat ada submit baru)
+            global _worker_berjalan
+            with _worker_lock:
+                _worker_berjalan = False
+            return
+
+        token = job["token"]
+        try:
+            _tulis_presensi_ke_sheets(job)
+            with _hasil_lock:
+                _hasil_presensi[token] = {"status": "ok", "data": job}
+        except Exception as e:
+            with _hasil_lock:
+                _hasil_presensi[token] = {"status": "error", "pesan": str(e)}
+        finally:
+            _antrian_presensi.task_done()
+            # Jeda kecil antar penulisan — hindari burst ke API Google
+            time.sleep(0.8)
+
+def _pastikan_worker_berjalan():
+    """Pastikan background worker thread aktif. Spawn baru jika sudah mati."""
+    global _worker_berjalan
+    with _worker_lock:
+        if not _worker_berjalan:
+            t = threading.Thread(target=_worker_presensi, daemon=True)
+            t.start()
+            _worker_berjalan = True
+
+def submit_presensi(data: dict) -> str:
+    """
+    Masukkan data presensi ke antrian.
+    Mengembalikan token (UUID) untuk polling hasil.
+    """
+    token = str(uuid.uuid4())
+    job   = {**data, "token": token}
+    _antrian_presensi.put(job)
+    _pastikan_worker_berjalan()
+    return token
+
+def cek_hasil_presensi(token: str) -> dict | None:
+    """
+    Cek apakah job dengan token sudah selesai diproses.
+    Return: {"status": "ok"|"error", ...} atau None jika masih pending.
+    """
+    with _hasil_lock:
+        return _hasil_presensi.get(token, None)
+
+# Cache NIM yang sudah submit per sesi pertemuan — cegah double submit
+# tanpa harus baca ulang Sheets setiap kali
+# Format: {f"{makul_safe}|{pertemuan}|{nim}": True}
+_nim_sudah_submit: set = set()
+_nim_cache_lock = threading.Lock()
+
+def tandai_nim_sudah_submit(makul_safe: str, pertemuan: str, nim: str):
+    with _nim_cache_lock:
+        _nim_sudah_submit.add(f"{makul_safe}|{pertemuan}|{nim}")
+
+def cek_nim_sudah_submit_lokal(makul_safe: str, pertemuan: str, nim: str) -> bool:
+    """Cek cache in-memory dulu sebelum baca Sheets (lebih cepat, hindari API call)."""
+    with _nim_cache_lock:
+        return f"{makul_safe}|{pertemuan}|{nim}" in _nim_sudah_submit
+
+
 
 # ============================================================
 # HELPER: ANTI-SPAM, VALIDASI, & DATA CLEANING
@@ -82,6 +182,7 @@ DEFAULTS = {
     'qr_makul':          None,
     'qr_pertemuan':      None,
     'qr_semester':       None,
+    'presensi_token':    None,   # Token antrian submit mahasiswa
 }
 for k, v in DEFAULTS.items():
     if k not in st.session_state:
@@ -767,6 +868,70 @@ def simpan_ke_sheets_dengan_retry(data: dict, max_retries: int = 5):
         except Exception:
             raise
 
+def _safe_name(raw: str) -> str:
+    """Konversi nama mata kuliah menjadi nama worksheet yang aman."""
+    safe = raw.replace("/","-").replace(":","-").replace("\\","-")
+    if len(safe) > 28:
+        suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
+        safe   = safe[:24] + "_" + suffix
+    return safe
+
+def _tulis_presensi_ke_sheets(job: dict, max_retries: int = 6):
+    """
+    Fungsi tulis eksklusif yang dipanggil oleh background worker.
+    Karena hanya satu thread yang memanggil ini, tidak ada race condition.
+    Tetap dilengkapi retry untuk toleransi network fluke.
+
+    Urutan kerja:
+    1. Buka/buat worksheet
+    2. Cek duplikat NIM di Sheets (sebagai second-gate setelah cache lokal)
+    3. Tulis baris baru
+    4. Update cache lokal agar user berikutnya tidak perlu baca Sheets lagi
+    """
+    raw        = job["Mata Kuliah"]
+    safe       = _safe_name(raw)
+    nim        = str(job["NIM"]).strip()
+    pertemuan  = str(job["Pertemuan Ke"])
+
+    for percobaan in range(max_retries):
+        try:
+            sheet   = get_sheet()
+            ws      = get_or_create_worksheet(sheet, safe)
+            records = ws.get_all_records()
+
+            # Second-gate duplikat (di worker, bukan di UI — akurat karena serial)
+            sudah = any(
+                str(r.get("NIM","")).strip() == nim and
+                str(r.get("Pertemuan Ke",""))  == pertemuan
+                for r in records
+            )
+            if sudah:
+                raise ValueError(f"DUPLIKAT: NIM {nim} sudah hadir di Pertemuan {pertemuan}")
+
+            ws.append_row([
+                job["Tanggal"], job["Jam Isi"],
+                job["Semester"], job["Pertemuan Ke"],
+                job["NIM"], job["Nama"], job["Rangkuman Materi"]
+            ])
+            # Update cache lokal supaya cek berikutnya tidak perlu baca Sheets
+            tandai_nim_sudah_submit(safe, pertemuan, nim)
+            hitung_hadir.clear()
+            return
+
+        except ValueError:
+            raise  # duplikat bukan retriable
+
+        except gspread.exceptions.APIError as e:
+            status_code = getattr(getattr(e, 'response', None), 'status_code', 0)
+            if status_code == 429 or status_code >= 500:
+                if percobaan < max_retries - 1:
+                    jeda = (2 ** percobaan) + (percobaan * 0.5)
+                    time.sleep(jeda)
+                    continue
+            raise
+
+        except Exception:
+            raise
 
 
 @st.cache_data(ttl=20)
@@ -1018,8 +1183,66 @@ elif st.session_state['halaman'] == 'mahasiswa':
 
     prodi_mhs = st.session_state.get('prodi', 'Bisnis Digital')
 
+    # ── Halaman Menunggu Antrean ─────────────────────────────
+    # Ditampilkan setelah submit, sebelum worker selesai menulis
+    if st.session_state.get('presensi_token') and not st.session_state.get('sudah_presensi'):
+        token  = st.session_state['presensi_token']
+        hasil  = cek_hasil_presensi(token)
+        posisi = _antrian_presensi.qsize()
+
+        if hasil is None:
+            # Masih antri / diproses
+            st.markdown(f"""
+                <div style='background:#fffbeb;border:1.5px solid #fcd34d;border-radius:20px;
+                    padding:32px 24px;text-align:center;margin-top:12px;'>
+                    <div style='font-size:40px;margin-bottom:12px;'>⏳</div>
+                    <h3 style='color:#92400e;font-weight:800;margin-bottom:6px;'>
+                        Sedang Diproses...
+                    </h3>
+                    <p style='color:#78350f;font-size:14px;margin-bottom:4px;'>
+                        Data Anda sedang disimpan ke sistem.
+                    </p>
+                    <p style='color:#78350f;font-size:13px;opacity:0.75;'>
+                        {'⏱️ Masih ada ' + str(posisi) + ' antrian di depan Anda.' if posisi > 0 else '✨ Hampir selesai!'}
+                    </p>
+                </div>
+            """, unsafe_allow_html=True)
+            # Auto-refresh setiap 1.5 detik selama masih pending
+            time.sleep(1.5)
+            st.rerun()
+
+        elif hasil["status"] == "ok":
+            # Worker selesai sukses → pindah ke konfirmasi
+            job = hasil["data"]
+            nm_makul = job["Mata Kuliah"].rsplit(' (', 1)[0]
+            st.session_state['konfirmasi_data'] = {
+                "nama":      job["Nama"],
+                "nim":       job["NIM"],
+                "makul":     nm_makul,
+                "makul_raw": job["Mata Kuliah"],
+                "tanggal":   job["Tanggal"],
+                "jam":       job["Jam Isi"],
+                "pertemuan": job["Pertemuan Ke"],
+                "semester":  job["Semester"],
+            }
+            st.session_state['sudah_presensi']  = True
+            st.session_state['presensi_token']  = None
+            st.balloons()
+            st.rerun()
+
+        else:
+            # Worker error
+            pesan = hasil.get("pesan", "Terjadi kesalahan.")
+            st.session_state['presensi_token'] = None
+            if "DUPLIKAT" in pesan:
+                st.error(f"❌ NIM Anda sudah terdaftar hadir di pertemuan ini!")
+            else:
+                st.error(f"❌ Gagal menyimpan presensi: {pesan}")
+            if st.button("← Coba Lagi", use_container_width=True):
+                st.rerun()
+
     # ── Halaman Konfirmasi Berhasil ──────────────────────────
-    if st.session_state.get('sudah_presensi') and st.session_state.get('konfirmasi_data'):
+    elif st.session_state.get('sudah_presensi') and st.session_state.get('konfirmasi_data'):
         konfirmasi   = st.session_state['konfirmasi_data']
         jumlah_hadir = hitung_hadir(konfirmasi['makul_raw'], konfirmasi['pertemuan'])
 
@@ -1160,57 +1383,32 @@ elif st.session_state['halaman'] == 'mahasiswa':
                 elif len(materi.strip()) < 20:
                     st.error(f"❌ Rangkuman terlalu pendek ({len(materi.strip())} karakter). Minimal 20 karakter.")
                 elif is_spam_text(materi, min_unique_ratio=0.15, min_unique_abs=8):
-                    st.error("❌ Rangkuman terdeteksi spam! Hindari pengulangan huruf/kata yang sama (contoh: 'baaaaaaiiiiikkkkk'). Tulis ringkasan materi yang sesungguhnya.")
+                    st.error("❌ Rangkuman terdeteksi spam! Hindari pengulangan huruf/kata yang sama. Tulis ringkasan materi yang sesungguhnya.")
                 elif kelas_terpilih_obj is None:
                     st.error("❌ Pilih kelas terlebih dahulu.")
                 else:
-                    # Format nama setelah semua validasi lulus
                     nama_bersih = format_nama(nama)
-                    tgl = waktu_sekarang.strftime("%Y-%m-%d")
-                    jam = waktu_sekarang.strftime("%H:%M:%S")
-                    try:
-                        sheet   = get_sheet()
-                        raw     = kelas_terpilih_obj["makul"]
-                        safe    = raw.replace("/","-").replace(":","-").replace("\\","-")
-                        if len(safe) > 28:
-                            suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
-                            safe   = safe[:24] + "_" + suffix
-                        ws      = get_or_create_worksheet(sheet, safe)
-                        records = ws.get_all_records()
-                        sudah   = any(
-                            str(r.get('NIM','')).strip() == nim_hasil and
-                            str(r.get('Pertemuan Ke','')) == str(kelas_terpilih_obj["pertemuan"])
-                            for r in records
-                        )
-                        if sudah:
-                            st.error(f"❌ NIM {nim_hasil} sudah terdaftar hadir pada Pertemuan Ke-{kelas_terpilih_obj['pertemuan']}!")
-                        else:
-                            simpan_ke_sheets_dengan_retry({
-                                "Tanggal":          tgl,
-                                "Jam Isi":          jam,
-                                "Mata Kuliah":      kelas_terpilih_obj["makul"],
-                                "Semester":         kelas_terpilih_obj["semester"],
-                                "Pertemuan Ke":     kelas_terpilih_obj["pertemuan"],
-                                "NIM":              nim_hasil,
-                                "Nama":             nama_bersih,
-                                "Rangkuman Materi": materi.strip()
-                            })
-                            nm_makul = kelas_terpilih_obj['makul'].rsplit(' (', 1)[0]
-                            st.session_state['konfirmasi_data'] = {
-                                "nama":      nama_bersih,
-                                "nim":       nim_hasil,
-                                "makul":     nm_makul,
-                                "makul_raw": kelas_terpilih_obj["makul"],
-                                "tanggal":   tgl,
-                                "jam":       jam,
-                                "pertemuan": kelas_terpilih_obj["pertemuan"],
-                                "semester":  kelas_terpilih_obj["semester"],
-                            }
-                            st.session_state['sudah_presensi'] = True
-                            st.balloons()
-                            st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ Gagal menghubungi database: {e}")
+                    raw_makul   = kelas_terpilih_obj["makul"]
+                    safe_makul  = _safe_name(raw_makul)
+                    pertemuan   = str(kelas_terpilih_obj["pertemuan"])
+
+                    # Cek cepat via cache lokal (tanpa baca Sheets)
+                    if cek_nim_sudah_submit_lokal(safe_makul, pertemuan, nim_hasil):
+                        st.error(f"❌ NIM {nim_hasil} sudah terdaftar hadir pada Pertemuan Ke-{pertemuan}!")
+                    else:
+                        # Masukkan ke antrian → UI tidak blocking
+                        token = submit_presensi({
+                            "Tanggal":          waktu_sekarang.strftime("%Y-%m-%d"),
+                            "Jam Isi":          waktu_sekarang.strftime("%H:%M:%S"),
+                            "Mata Kuliah":      raw_makul,
+                            "Semester":         kelas_terpilih_obj["semester"],
+                            "Pertemuan Ke":     pertemuan,
+                            "NIM":              nim_hasil,
+                            "Nama":             nama_bersih,
+                            "Rangkuman Materi": materi.strip()
+                        })
+                        st.session_state['presensi_token'] = token
+                        st.rerun()
 
 
 # ============================================================
