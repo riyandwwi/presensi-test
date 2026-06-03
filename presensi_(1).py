@@ -8,61 +8,6 @@ from google.oauth2.service_account import Credentials
 import pytz
 import hashlib
 import urllib.parse
-import re
-import time
-
-# ============================================================
-# HELPER: ANTI-SPAM, VALIDASI, & DATA CLEANING
-# ============================================================
-
-def is_spam_text(text: str, min_unique_ratio: float = 0.3, min_unique_abs: int = 5) -> bool:
-    """
-    Deteksi teks spam berdasarkan rasio karakter unik.
-    Contoh spam: 'baaaaaaiiiiikkkkk', 'ok     ', 'aaaaaaaaaaaaaaaaaaa'
-    - min_unique_ratio : proporsi minimum karakter unik terhadap total karakter
-    - min_unique_abs   : jumlah minimum karakter unik secara absolut
-    Mengembalikan True jika teks terindikasi spam.
-    """
-    cleaned = text.strip()
-    if not cleaned:
-        return False
-    # Hapus spasi berulang sebelum cek
-    no_spaces = cleaned.replace(" ", "")
-    if not no_spaces:
-        return True  # hanya spasi
-    unique_chars  = len(set(no_spaces.lower()))
-    total_chars   = len(no_spaces)
-    unique_ratio  = unique_chars / total_chars
-    # Spam jika karakter unik sangat sedikit secara absolut DAN rasionya rendah
-    return unique_chars < min_unique_abs and unique_ratio < min_unique_ratio
-
-def format_nama(nama: str) -> str:
-    """
-    Bersihkan dan format nama mahasiswa:
-    - Hapus spasi ganda / leading-trailing
-    - Ubah ke Title Case
-    """
-    # Ganti semua whitespace berlebih (termasuk tab, newline) dengan satu spasi
-    nama_bersih = re.sub(r'\s+', ' ', nama.strip())
-    return nama_bersih.title()
-
-def validasi_nim(nim: str) -> tuple[bool, str]:
-    """
-    Validasi NIM:
-    - Harus berisi angka saja
-    - Panjang antara 9–12 digit
-    Mengembalikan (True, nim_clean) atau (False, pesan_error).
-    """
-    nim_clean = nim.strip()
-    if not nim_clean.isdigit():
-        return False, "NIM hanya boleh berisi angka (tanpa huruf atau karakter lain)."
-    if len(nim_clean) < 7:
-        return False, f"NIM terlalu pendek ({len(nim_clean)} digit). Minimal 9 digit."
-    if len(nim_clean) > 8:
-        return False, f"NIM terlalu panjang ({len(nim_clean)} digit). Maksimal 12 digit."
-    return True, nim_clean
-
-
 
 # ============================================================
 # ZONA WAKTU & SESSION STATE
@@ -745,30 +690,6 @@ def simpan_ke_sheets(data: dict):
         data["NIM"], data["Nama"], data["Rangkuman Materi"]
     ])
 
-def simpan_ke_sheets_dengan_retry(data: dict, max_retries: int = 5):
-    """
-    Simpan data ke Google Sheets dengan Exponential Backoff.
-    Otomatis mencoba kembali saat terkena Rate Limit (Error 429)
-    atau error sementara lainnya dari API Google.
-    """
-    for percobaan in range(max_retries):
-        try:
-            simpan_ke_sheets(data)
-            return  # Berhasil, keluar dari loop
-        except gspread.exceptions.APIError as e:
-            status_code = e.response.status_code if hasattr(e, 'response') else 0
-            if status_code == 429 or status_code >= 500:
-                if percobaan < max_retries - 1:
-                    # Exponential backoff: 2^percobaan detik + sedikit jitter
-                    jeda = (2 ** percobaan) + (percobaan * 0.3)
-                    time.sleep(jeda)
-                    continue
-            raise  # Error lain atau sudah habis percobaan → lempar ke atas
-        except Exception:
-            raise
-
-
-
 @st.cache_data(ttl=20)
 def hitung_hadir(makul, pertemuan):
     try:
@@ -1149,68 +1070,58 @@ elif st.session_state['halaman'] == 'mahasiswa':
                 st.error("❌ Gagal! Belum ada kelas yang dibuka saat ini.")
             elif not nama.strip():
                 st.error("❌ Nama wajib diisi!")
-            elif is_spam_text(nama):
-                st.error("❌ Nama tidak valid! Hindari pengetikan huruf yang sama berulang-ulang (contoh: 'aaaaaaaa'). Masukkan nama lengkap yang benar.")
             elif not nim.strip():
                 st.error("❌ NIM wajib diisi!")
+            elif len(materi.strip()) < 20:
+                st.error(f"❌ Rangkuman terlalu pendek ({len(materi.strip())} karakter). Minimal 20 karakter.")
+            elif kelas_terpilih_obj is None:
+                st.error("❌ Pilih kelas terlebih dahulu.")
             else:
-                nim_valid, nim_hasil = validasi_nim(nim)
-                if not nim_valid:
-                    st.error(f"❌ NIM tidak valid! {nim_hasil}")
-                elif len(materi.strip()) < 20:
-                    st.error(f"❌ Rangkuman terlalu pendek ({len(materi.strip())} karakter). Minimal 20 karakter.")
-                elif is_spam_text(materi, min_unique_ratio=0.15, min_unique_abs=8):
-                    st.error("❌ Rangkuman terdeteksi spam! Hindari pengulangan huruf/kata yang sama (contoh: 'baaaaaaiiiiikkkkk'). Tulis ringkasan materi yang sesungguhnya.")
-                elif kelas_terpilih_obj is None:
-                    st.error("❌ Pilih kelas terlebih dahulu.")
-                else:
-                    # Format nama setelah semua validasi lulus
-                    nama_bersih = format_nama(nama)
-                    tgl = waktu_sekarang.strftime("%Y-%m-%d")
-                    jam = waktu_sekarang.strftime("%H:%M:%S")
-                    try:
-                        sheet   = get_sheet()
-                        raw     = kelas_terpilih_obj["makul"]
-                        safe    = raw.replace("/","-").replace(":","-").replace("\\","-")
-                        if len(safe) > 28:
-                            suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
-                            safe   = safe[:24] + "_" + suffix
-                        ws      = get_or_create_worksheet(sheet, safe)
-                        records = ws.get_all_records()
-                        sudah   = any(
-                            str(r.get('NIM','')).strip() == nim_hasil and
-                            str(r.get('Pertemuan Ke','')) == str(kelas_terpilih_obj["pertemuan"])
-                            for r in records
-                        )
-                        if sudah:
-                            st.error(f"❌ NIM {nim_hasil} sudah terdaftar hadir pada Pertemuan Ke-{kelas_terpilih_obj['pertemuan']}!")
-                        else:
-                            simpan_ke_sheets_dengan_retry({
-                                "Tanggal":          tgl,
-                                "Jam Isi":          jam,
-                                "Mata Kuliah":      kelas_terpilih_obj["makul"],
-                                "Semester":         kelas_terpilih_obj["semester"],
-                                "Pertemuan Ke":     kelas_terpilih_obj["pertemuan"],
-                                "NIM":              nim_hasil,
-                                "Nama":             nama_bersih,
-                                "Rangkuman Materi": materi.strip()
-                            })
-                            nm_makul = kelas_terpilih_obj['makul'].rsplit(' (', 1)[0]
-                            st.session_state['konfirmasi_data'] = {
-                                "nama":      nama_bersih,
-                                "nim":       nim_hasil,
-                                "makul":     nm_makul,
-                                "makul_raw": kelas_terpilih_obj["makul"],
-                                "tanggal":   tgl,
-                                "jam":       jam,
-                                "pertemuan": kelas_terpilih_obj["pertemuan"],
-                                "semester":  kelas_terpilih_obj["semester"],
-                            }
-                            st.session_state['sudah_presensi'] = True
-                            st.balloons()
-                            st.rerun()
-                    except Exception as e:
-                        st.error(f"❌ Gagal menghubungi database: {e}")
+                tgl = waktu_sekarang.strftime("%Y-%m-%d")
+                jam = waktu_sekarang.strftime("%H:%M:%S")
+                try:
+                    sheet   = get_sheet()
+                    raw     = kelas_terpilih_obj["makul"]
+                    safe    = raw.replace("/","-").replace(":","-").replace("\\","-")
+                    if len(safe) > 28:
+                        suffix = hashlib.md5(raw.encode()).hexdigest()[:4]
+                        safe   = safe[:24] + "_" + suffix
+                    ws      = get_or_create_worksheet(sheet, safe)
+                    records = ws.get_all_records()
+                    sudah   = any(
+                        str(r.get('NIM','')).strip() == nim.strip() and
+                        str(r.get('Pertemuan Ke','')) == str(kelas_terpilih_obj["pertemuan"])
+                        for r in records
+                    )
+                    if sudah:
+                        st.error(f"❌ NIM {nim} sudah terdaftar hadir pada Pertemuan Ke-{kelas_terpilih_obj['pertemuan']}!")
+                    else:
+                        simpan_ke_sheets({
+                            "Tanggal":          tgl,
+                            "Jam Isi":          jam,
+                            "Mata Kuliah":      kelas_terpilih_obj["makul"],
+                            "Semester":         kelas_terpilih_obj["semester"],
+                            "Pertemuan Ke":     kelas_terpilih_obj["pertemuan"],
+                            "NIM":              nim.strip(),
+                            "Nama":             nama.strip(),
+                            "Rangkuman Materi": materi.strip()
+                        })
+                        nm_makul = kelas_terpilih_obj['makul'].rsplit(' (', 1)[0]
+                        st.session_state['konfirmasi_data'] = {
+                            "nama":      nama.strip(),
+                            "nim":       nim.strip(),
+                            "makul":     nm_makul,
+                            "makul_raw": kelas_terpilih_obj["makul"],
+                            "tanggal":   tgl,
+                            "jam":       jam,
+                            "pertemuan": kelas_terpilih_obj["pertemuan"],
+                            "semester":  kelas_terpilih_obj["semester"],
+                        }
+                        st.session_state['sudah_presensi'] = True
+                        st.balloons()
+                        st.rerun()
+                except Exception as e:
+                    st.error(f"❌ Gagal menghubungi database: {e}")
 
 
 # ============================================================
