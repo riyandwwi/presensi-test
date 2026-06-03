@@ -40,152 +40,204 @@ for k, v in DEFAULTS.items():
 st.set_page_config(page_title="Presensi Bisnis Digital & Aktuaria", page_icon="📝", layout="centered")
 
 # ============================================================
-# CSS
+# CSS MODERNISED FROM STITCH AI (SaaS High-Contrast Theme)
 # ============================================================
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
 html, body, [class*="css"] { font-family: 'Plus Jakarta Sans', sans-serif; }
 header {visibility:hidden;} footer {visibility:hidden;} #MainMenu {visibility:hidden;}
-.stApp { background: var(--background-color); }
+
+/* Background Canvas */
+.stApp { 
+    background-color: #F8FAFC !important; 
+}
+
+/* Premium Gradient Header Banner */
 .header-banner {
-    background: linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%);
-    padding: 25px; border-radius: 16px; color: white;
-    text-align: center; margin-bottom: 25px;
-    box-shadow: 0 10px 20px rgba(79,70,229,0.25);
+    background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%) !important;
+    padding: 35px 25px; 
+    border-radius: 20px; 
+    color: white;
+    text-align: center; 
+    margin-bottom: 30px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
 }
-.header-banner h1 { color:white !important; font-weight:800; font-size:28px; margin-bottom:5px; }
-.header-banner p  { color:#E0E7FF !important; font-size:15px; opacity:0.9; margin:0; }
-div[data-testid="stForm"] {
-    background: var(--secondary-background-color) !important;
-    border: 1px solid rgba(128,128,128,0.2) !important;
-    border-radius: 20px !important; padding: 35px !important;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
+.header-banner h1 { color:white !important; font-weight:800; font-size:32px; margin-bottom:8px; letter-spacing: -0.5px; }
+.header-banner p  { color:#94A3B8 !important; font-size:15px; font-weight:500; margin:0; }
+
+/* Dashboard Forms and Wrapper Cards */
+div[data-testid="stForm"], div[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 20px !important; 
+    padding: 35px !important;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03) !important;
 }
+
+/* Sleek Inputs Style */
 div[data-testid="stTextInput"] input,
 div[data-testid="stTextArea"] textarea,
-div[data-testid="stNumberInput"] input {
-    background-color: var(--secondary-background-color) !important;
-    color: var(--text-color) !important;
-    border: 1.5px solid rgba(128,128,128,0.35) !important;
-    border-radius: 10px !important; font-size: 15px !important;
+div[data-testid="stNumberInput"] input,
+input[type="password"] {
+    background-color: #F8FAFC !important;
+    color: #0F172A !important;
+    border: 1.5px solid #E2E8F0 !important;
+    border-radius: 12px !important; 
+    padding: 12px 16px !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
 }
 div[data-testid="stTextInput"] input:focus,
 div[data-testid="stTextArea"] textarea:focus {
-    border-color: #6366F1 !important;
-    box-shadow: 0 0 0 4px rgba(99,102,241,0.15) !important;
+    border-color: #4F46E5 !important;
+    background-color: #FFFFFF !important;
+    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1) !important;
 }
-div[data-testid="stTextInput"] input::placeholder,
-div[data-testid="stTextArea"] textarea::placeholder {
-    color: var(--text-color) !important; opacity: 0.4 !important;
-}
+
+/* Custom Selectbox styling */
 div[data-testid="stSelectbox"] > div[data-baseweb="select"] > div {
-    background-color: var(--secondary-background-color) !important;
-    border: 1.5px solid rgba(128,128,128,0.35) !important;
-    border-radius: 10px !important;
+    background-color: #F8FAFC !important;
+    border: 1.5px solid #E2E8F0 !important;
+    border-radius: 12px !important;
+    height: 48px !important;
 }
 div[data-baseweb="select"] span, div[data-baseweb="select"] div,
-div[data-testid="stSelectbox"] span { color: var(--text-color) !important; background-color: transparent !important; }
-div[data-baseweb="select"] svg { fill: var(--text-color) !important; opacity: 0.6; }
-div[data-baseweb="popover"], ul[data-baseweb="menu"], div[role="listbox"] {
-    background-color: var(--secondary-background-color) !important;
-    border: 1px solid rgba(128,128,128,0.25) !important;
-    border-radius: 10px !important;
-}
-li[role="option"], div[role="option"] {
-    background-color: var(--secondary-background-color) !important;
-    color: var(--text-color) !important;
-}
-li[role="option"]:hover, li[aria-selected="true"] {
-    background-color: rgba(99,102,241,0.15) !important;
-}
-div[data-testid="stRadio"] label, div[data-testid="stRadio"] p { color: var(--text-color) !important; }
+div[data-testid="stSelectbox"] span { color: #0F172A !important; }
+
+/* Navigation Radio buttons (Prodi) */
 div[data-testid="stRadio"] > div {
-    background: var(--secondary-background-color) !important;
-    border: 1px solid rgba(128,128,128,0.2) !important;
-    border-radius: 10px !important; padding: 8px 16px !important;
+    background: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 14px !important; 
+    padding: 10px 20px !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
 }
+
+/* Text and Labels */
 label, .stLabel {
-    color: var(--text-color) !important;
-    font-weight: 600 !important; font-size: 14px !important;
+    color: #334155 !important;
+    font-weight: 600 !important; 
+    font-size: 14px !important;
+    margin-bottom: 8px !important;
 }
-button[kind="formSubmit"] {
-    background: linear-gradient(135deg, #4F46E5 0%, #3B82F6 100%) !important;
-    color: white !important; border: none !important; border-radius: 12px !important;
-    padding: 12px 24px !important; font-size: 16px !important; font-weight: 700 !important;
+
+/* Primary Action Buttons */
+button[kind="formSubmit"], button[kind="primary"] {
+    background: linear-gradient(135deg, #4F46E5 0%, #3730A3 100%) !important;
+    color: white !important; 
+    border: none !important; 
+    border-radius: 12px !important;
+    padding: 14px 28px !important; 
+    font-size: 16px !important; 
+    font-weight: 700 !important;
     width: 100% !important;
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3) !important;
+    transition: all 0.2s ease-in-out !important;
 }
+button[kind="formSubmit"]:hover, button[kind="primary"]:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.4) !important;
+}
+
+/* Secondary Buttons */
 button[kind="secondary"], button[data-testid="baseButton-secondary"] {
-    background-color: var(--secondary-background-color) !important;
-    color: var(--text-color) !important;
-    border: 1px solid rgba(128,128,128,0.3) !important;
-    border-radius: 10px !important;
+    background-color: #FFFFFF !important;
+    color: #475569 !important;
+    border: 1px solid #CBD5E1 !important;
+    border-radius: 12px !important;
+    font-weight: 600 !important;
 }
-div[data-testid="stVerticalBlockBorderWrapper"] {
-    background-color: var(--secondary-background-color) !important;
-    border: 1px solid rgba(128,128,128,0.2) !important; border-radius: 12px !important;
+button[kind="secondary"]:hover {
+    border-color: #4F46E5 !important;
+    color: #4F46E5 !important;
 }
-button[data-baseweb="tab"] { color: var(--text-color) !important; background: transparent !important; opacity: 0.6; }
-button[data-baseweb="tab"][aria-selected="true"] { color: #6366F1 !important; opacity: 1; border-bottom-color: #6366F1 !important; }
+
+/* Modern App Tabs */
+button[data-baseweb="tab"] { 
+    color: #64748B !important; 
+    font-weight: 600 !important;
+    padding: 12px 20px !important;
+}
+button[data-baseweb="tab"][aria-selected="true"] { 
+    color: #4F46E5 !important; 
+    border-bottom-color: #4F46E5 !important; 
+}
+
+/* Metrics and Dashboard Badges */
 div[data-testid="stMetric"] {
-    background: var(--secondary-background-color) !important;
-    border: 1px solid rgba(128,128,128,0.2) !important;
-    border-radius: 12px !important; padding: 12px 16px !important;
+    background: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 14px !important; 
+    padding: 16px !important;
 }
-details[data-testid="stExpander"] > summary {
-    background: var(--secondary-background-color) !important;
-    border: 1px solid rgba(128,128,128,0.2) !important;
-    border-radius: 8px !important;
-}
-div[data-testid="stExpanderDetails"] {
-    background: var(--secondary-background-color) !important;
-    border: 1px solid rgba(128,128,128,0.15) !important;
-    border-top: none !important; border-radius: 0 0 8px 8px !important;
-}
-div[data-testid="stAlert"] { border-radius: 10px !important; }
-div[data-testid="stDataFrame"] { border-radius: 10px !important; border: 1px solid rgba(128,128,128,0.2) !important; }
-input[type="password"] {
-    background-color: var(--secondary-background-color) !important;
-    color: var(--text-color) !important;
-    border: 1.5px solid rgba(128,128,128,0.35) !important; border-radius: 10px !important;
-}
+
+/* Dynamic Classes from Code */
 .clock-container {
-    background: rgba(251,191,36,0.12); border: 1px solid rgba(251,191,36,0.4);
-    border-radius: 12px; padding: 12px; text-align: center; margin-bottom: 20px;
-    color: #D97706; font-weight: 600; font-size: 14px;
+    background: #FEF3C7; 
+    border: 1px solid #F59E0B;
+    border-radius: 12px; 
+    padding: 14px; 
+    text-align: center; 
+    margin-bottom: 25px;
+    color: #B45309; 
+    font-weight: 600; 
+    font-size: 14px;
 }
 .kelas-badge {
-    background: var(--secondary-background-color); border-left: 4px solid #6366F1;
-    border-radius: 8px; padding: 12px 16px; margin-bottom: 10px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.06); color: var(--text-color);
+    background: #FFFFFF; 
+    border-left: 5px solid #4F46E5;
+    border-radius: 12px; 
+    padding: 16px; 
+    margin-bottom: 12px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); 
+    color: #0F172A;
+    border-top: 1px solid #F1F5F9;
+    border-right: 1px solid #F1F5F9;
+    border-bottom: 1px solid #F1F5F9;
 }
 .konfirmasi-box {
-    background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(16,185,129,0.06) 100%);
-    border: 2px solid rgba(16,185,129,0.5); border-radius: 20px;
-    padding: 30px; text-align: center; margin: 10px 0 20px 0;
+    background: linear-gradient(135deg, #ECFDF5 0%, #D1FAE5 100%);
+    border: 1px solid #10B981; 
+    border-radius: 20px;
+    padding: 35px; 
+    text-align: center; 
+    margin: 10px 0 25px 0;
 }
-.konfirmasi-box h2 { color: #10B981 !important; font-size: 22px; margin-bottom: 8px; }
+.konfirmasi-box h2 { color: #065F46 !important; font-size: 24px; font-weight:800; }
 .counter-box {
-    background: var(--secondary-background-color); border-radius: 12px;
-    padding: 14px 20px; text-align: center;
-    border: 1px solid rgba(128,128,128,0.2); margin-top: 10px;
+    background: #FFFFFF; 
+    border-radius: 16px;
+    padding: 20px; 
+    text-align: center;
+    border: 1px solid #E2E8F0; 
+    margin-top: 15px;
+    box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
 }
-.counter-box .angka { font-size: 32px; font-weight: 800; color: #6366F1; }
-.histori-container {
-    background-color: var(--secondary-background-color);
-    border: 1px solid rgba(128,128,128,0.2); border-left: 4px solid #10B981;
-    border-radius: 8px; padding: 15px; margin-bottom: 12px;
-}
+.counter-box .angka { font-size: 38px; font-weight: 800; color: #4F46E5; }
+
 .akses-card {
-    background: var(--secondary-background-color); border-radius: 16px;
-    padding: 30px 20px; text-align: center;
-    border: 1.5px solid rgba(128,128,128,0.2); transition: all 0.2s;
+    background: #FFFFFF; 
+    border-radius: 20px;
+    padding: 35px 25px; 
+    text-align: center;
+    border: 1.5px solid #E2E8F0; 
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
 }
-.akses-card:hover { border-color: #6366F1; }
+.akses-card:hover { 
+    border-color: #4F46E5; 
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+}
 .qr-banner {
-    background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(99,102,241,0.08) 100%);
-    border: 2px solid rgba(16,185,129,0.4); border-radius: 16px;
-    padding: 16px 20px; margin-bottom: 16px;
+    background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+    border: 1px solid #3B82F6; 
+    border-radius: 14px;
+    padding: 18px 22px; 
+    margin-bottom: 20px;
+    color: #1E40AF;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -526,7 +578,7 @@ cek_dan_tutup_kelas_kadaluarsa()
 st.markdown("""
     <div class="header-banner">
         <h1>📝 PRESENSI PERKULIAHAN</h1>
-        <p>Bisnis Digital & Aktuaria — Beta ver 3.0</p>
+        <p>Bisnis Digital & Aktuaria — Modern UI v3.0</p>
     </div>
 """, unsafe_allow_html=True)
 
@@ -594,7 +646,6 @@ elif st.session_state['halaman'] == 'mahasiswa':
     col_back, _ = st.columns([1, 4])
     with col_back:
         if st.button("← Kembali", key="back_mhs"):
-            # Reset QR state saat kembali
             st.session_state['qr_makul']     = None
             st.session_state['qr_pertemuan'] = None
             st.session_state['qr_semester']  = None
@@ -647,7 +698,6 @@ elif st.session_state['halaman'] == 'mahasiswa':
             </div>
         """, unsafe_allow_html=True)
 
-        # ── Banner jika masuk dari QR ──
         qr_makul = st.session_state.get('qr_makul')
         if qr_makul:
             nama_tampil = qr_makul.rsplit(' (', 1)[0] if ' (' in qr_makul else qr_makul
@@ -658,9 +708,6 @@ elif st.session_state['halaman'] == 'mahasiswa':
                         Kelas: <b>{nama_tampil}</b> &nbsp;·&nbsp;
                         Smt {st.session_state.get('qr_semester','-')} &nbsp;·&nbsp;
                         Pertemuan ke-{st.session_state.get('qr_pertemuan','-')}
-                    </div>
-                    <div style="font-size:12px;opacity:0.6;margin-top:2px;">
-                        Sesi sudah otomatis terpilih. Isi nama, NIM, dan rangkuman.
                     </div>
                 </div>
             """, unsafe_allow_html=True)
@@ -674,28 +721,20 @@ elif st.session_state['halaman'] == 'mahasiswa':
             with col_nim:
                 nim  = st.text_input("NIM", placeholder="Contoh: 220101001")
 
-            # Jika dari QR → auto-select kelas, tidak bisa diubah
             if qr_makul:
-                # Cari kelas yang sesuai dari kelas aktif
-                kelas_qr = next(
-                    (k for k in kelas_mhs_aktif if k['makul'] == qr_makul),
-                    None
-                )
+                kelas_qr = next((k for k in kelas_mhs_aktif if k['makul'] == qr_makul), None)
                 if kelas_qr:
                     nm  = kelas_qr['makul'].rsplit(' (', 1)[0]
                     nd  = kelas_qr['makul'].rsplit(' (', 1)[-1].rstrip(')').split(',')[0]
                     st.markdown(f"""
-                        <div style='background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);
-                            border-radius:10px;padding:10px 14px;font-size:14px;margin-bottom:8px;'>
+                        <div style='background:rgba(79,70,229,0.08);border:1px solid rgba(79,70,229,0.25);
+                            border-radius:12px;padding:12px 16px;font-size:14px;margin-bottom:12px;font-weight:500;'>
                             🏫 <b>{nm}</b> &nbsp;—&nbsp; {nd} &nbsp;|&nbsp; Pertemuan {kelas_qr['pertemuan']}
                         </div>
                     """, unsafe_allow_html=True)
                     kelas_terpilih_obj = kelas_qr
                     opsi_kelas = [f"{nm} — {nd} | Pertemuan {kelas_qr['pertemuan']}"]
-                    pilihan_kelas_label = opsi_kelas[0]
-                    # Hidden selectbox agar form valid
-                    st.selectbox("🏫 Sesi Kelas:", options=opsi_kelas,
-                                 label_visibility="collapsed", disabled=True)
+                    st.selectbox("🏫 Sesi Kelas:", options=opsi_kelas, label_visibility="collapsed", disabled=True)
                 else:
                     st.warning("⚠️ Kelas dari QR ini sudah tidak aktif. Pilih kelas manual di bawah.")
                     kelas_terpilih_obj = None
@@ -709,7 +748,7 @@ elif st.session_state['halaman'] == 'mahasiswa':
                         return f"{nm} — {nd} | Pertemuan {k['pertemuan']}"
                     opsi_kelas          = [label_kelas(k) for k in kelas_mhs_aktif]
                     pilihan_kelas_label = st.selectbox("🏫 Pilih Sesi Kelas:", options=opsi_kelas)
-                    kelas_terpilih_obj  = None  # akan dicari saat submit
+                    kelas_terpilih_obj  = None
                 else:
                     st.warning(f"⚠️ Belum ada kelas {prodi_mhs} yang aktif. Silakan tunggu instruksi dosen.")
                     pilihan_kelas_label = None
@@ -724,7 +763,6 @@ elif st.session_state['halaman'] == 'mahasiswa':
             submit_button = st.form_submit_button(label="KIRIM BUKTI HADIR")
 
         if submit_button:
-            # Cari kelas yang dipilih
             if kelas_terpilih_obj is None and kelas_mhs_aktif and pilihan_kelas_label:
                 idx_pilihan   = opsi_kelas.index(pilihan_kelas_label)
                 kelas_terpilih_obj = kelas_mhs_aktif[idx_pilihan]
@@ -795,7 +833,7 @@ elif st.session_state['halaman'] == 'dosen':
             ke_halaman('landing')
 
     if not st.session_state.get('dosen_login', False):
-        st.markdown("<h3 style='text-align:center;font-weight:800;color:#6366F1;'>Autentikasi Dosen</h3>", unsafe_allow_html=True)
+        st.markdown("<h3 style='text-align:center;font-weight:800;color:#4F46E5;'>Autentikasi Dosen</h3>", unsafe_allow_html=True)
 
         idx_prodi_dosen = 0 if st.session_state['prodi'] == 'Bisnis Digital' else 1
         prodi_dosen = st.selectbox("Pilih Program Studi", ["Bisnis Digital", "Aktuaria"], index=idx_prodi_dosen)
@@ -852,7 +890,6 @@ elif st.session_state['halaman'] == 'dosen':
                 nm_aktif     = status_dosen['makul'].rsplit(' (', 1)[0]
                 waktu_buka_s = status_dosen.get("waktu_buka", "")
 
-                # Hitung sisa waktu
                 sisa_info = ""
                 progres_pct = 0
                 waktu_buka_fmt = ""
@@ -877,41 +914,39 @@ elif st.session_state['halaman'] == 'dosen':
 
                 st.success(f"🟢 Kelas Aktif: **{nm_aktif}** (Smt {status_dosen['semester']} — Pertemuan {status_dosen['pertemuan']})")
 
-                # Card info waktu
                 col_wb1, col_wb2 = st.columns(2)
                 with col_wb1:
                     st.markdown(f"""
-                        <div style='background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.25);
-                            border-radius:10px;padding:12px 16px;'>
-                            <div style='font-size:11px;opacity:0.6;margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px'>Dibuka Sejak</div>
+                        <div style='background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.2);
+                            border-radius:12px;padding:12px 16px;'>
+                            <div style='font-size:11px;opacity:0.6;margin-bottom:2px;text-transform:uppercase;color:#065F46'>Dibuka Sejak</div>
                             <div style='font-weight:700;font-size:15px;color:#10B981'>{waktu_buka_fmt if waktu_buka_fmt else "—"}</div>
                         </div>
                     """, unsafe_allow_html=True)
                 with col_wb2:
                     warna_sisa = "#10B981" if progres_pct < 75 else ("#F59E0B" if progres_pct < 90 else "#EF4444")
                     st.markdown(f"""
-                        <div style='background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);
-                            border-radius:10px;padding:12px 16px;'>
-                            <div style='font-size:11px;opacity:0.6;margin-bottom:2px;text-transform:uppercase;letter-spacing:.5px'>Sisa Waktu (Auto-close {BATAS_JAM} jam)</div>
+                        <div style='background:rgba(79,70,229,0.06);border:1px solid rgba(79,70,229,0.2);
+                            border-radius:12px;padding:12px 16px;'>
+                            <div style='font-size:11px;opacity:0.6;margin-bottom:2px;text-transform:uppercase;color:#3730A3'>Sisa Waktu (Auto-close)</div>
                             <div style='font-weight:700;font-size:15px;color:{warna_sisa}'>{sisa_info if sisa_info else "—"}</div>
                         </div>
                     """, unsafe_allow_html=True)
 
-                # Progress bar
                 if progres_pct > 0:
                     warna_bar = "#10B981" if progres_pct < 75 else ("#F59E0B" if progres_pct < 90 else "#EF4444")
                     st.markdown(f"""
-                        <div style='margin-top:8px;'>
-                            <div style='display:flex;justify-content:space-between;font-size:11px;opacity:0.5;margin-bottom:4px;'>
-                                <span>Durasi terpakai</span>
+                        <div style='margin-top:12px; padding: 0 4px;'>
+                            <div style='display:flex;justify-content:space-between;font-size:11px;opacity:0.6;margin-bottom:4px;'>
+                                <span>Durasi Terpakai</span>
                                 <span>{progres_pct}%</span>
                             </div>
-                            <div style='background:rgba(128,128,128,0.15);border-radius:999px;height:6px;overflow:hidden;'>
-                                <div style='width:{progres_pct}%;background:{warna_bar};height:100%;border-radius:999px;transition:width .3s;'></div>
+                            <div style='background:#E2E8F0;border-radius:999px;height:8px;overflow:hidden;'>
+                                <div style='width:{progres_pct}%;background:{warna_bar};height:100%;border-radius:999px;'></div>
                             </div>
                         </div>
                     """, unsafe_allow_html=True)
-                st.markdown("<div style='margin-top:8px'></div>", unsafe_allow_html=True)
+                st.markdown("<div style='margin-top:12px'></div>", unsafe_allow_html=True)
             else:
                 st.info("⚪ Status: **Standby** — belum ada kelas aktif.")
 
@@ -976,20 +1011,18 @@ elif st.session_state['halaman'] == 'dosen':
                     )
                 with col_info:
                     st.markdown(f"""
-                        <div style='background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);
-                            border-radius:12px;padding:14px;font-size:13px;'>
-                            <b>Cara pakai:</b><br>
-                            1️⃣ Aktifkan kelas dulu (tombol di atas)<br>
-                            2️⃣ Tampilkan / print QR ini<br>
-                            3️⃣ Mahasiswa scan → langsung ke form<br>
-                            4️⃣ Sesi otomatis terpilih, tinggal isi nama & NIM
+                        <div style='background:#F8FAFC;border:1px solid #E2E8F0;
+                            border-radius:12px;padding:16px;font-size:13px;color:#475569;'>
+                            <b style="color:#0F172A;">Cara Pakai:</b><br>
+                            1️⃣ Aktifkan sesi kelas di atas.<br>
+                            2️⃣ Tampilkan QR ini di layar proyektor kelas.<br>
+                            3️⃣ Mahasiswa melakukan scan QR untuk auto-fill data kelas.<br>
+                            4️⃣ Mahasiswa menginput Nama, NIM, dan ringkasan materi.
                         </div>
                     """, unsafe_allow_html=True)
                     st.code(qr_url, language=None)
             else:
                 st.warning("⚠️ Aktifkan kelas terlebih dahulu untuk generate QR.")
-                st.markdown(f"**URL App:** `{base_url_default}`")
-                st.caption("Isi `app_url` di secrets.toml dengan URL Streamlit app kamu.")
 
         # ─── TAB 2 — MONITOR ────────────────────────────────────
         with tab2:
@@ -1055,7 +1088,6 @@ elif st.session_state['halaman'] == 'dosen':
                     s = s[:24] + "_" + suffix
                 return s
 
-            # Load data untuk makul terpilih
             df_makul = pd.DataFrame()
             try:
                 ws_a = get_sheet().worksheet(safe_name(makul_gabung))
@@ -1069,12 +1101,10 @@ elif st.session_state['halaman'] == 'dosen':
 
             sub1, sub2, sub3 = st.tabs(["📜 Histori & Detail", "📥 Unduh Data", "🗑️ Hapus Entri"])
 
-            # ── SUB TAB 1: HISTORI LENGKAP ──────────────────────
             with sub1:
                 if df_makul.empty:
                     st.info("Belum ada data presensi untuk mata kuliah ini.")
                 else:
-                    # Ringkasan total
                     total_mhs_unik = df_makul['NIM'].nunique() if 'NIM' in df_makul.columns else 0
                     total_prt      = df_makul['Pertemuan Ke'].nunique() if 'Pertemuan Ke' in df_makul.columns else 0
                     total_presensi = len(df_makul)
@@ -1084,7 +1114,6 @@ elif st.session_state['halaman'] == 'dosen':
                     c3.metric("Pertemuan Tercatat", total_prt)
                     st.markdown("---")
 
-                    # Histori per pertemuan + tabel mahasiswa
                     st.markdown("##### Riwayat Semua Pertemuan")
                     if 'Pertemuan Ke' in df_makul.columns:
                         summ = df_makul.groupby('Pertemuan Ke').agg(
@@ -1102,13 +1131,11 @@ elif st.session_state['halaman'] == 'dosen':
                                 f"📅 Pertemuan Ke-{prt_num}  ·  {rh['tgl']}  ·  🎓 {rh['total']} Mahasiswa Hadir",
                                 expanded=False
                             ):
-                                # Tabel mahasiswa
                                 cols_tampil = [c for c in ['NIM','Nama','Jam Isi','Semester','Rangkuman Materi'] if c in df_prt.columns]
                                 df_show = df_prt[cols_tampil].reset_index(drop=True)
                                 df_show.index += 1
                                 st.dataframe(df_show, use_container_width=True)
 
-                                # Download per pertemuan
                                 out_p = BytesIO()
                                 df_show.to_excel(out_p, index=False, engine='openpyxl')
                                 out_p.seek(0)
@@ -1122,7 +1149,6 @@ elif st.session_state['halaman'] == 'dosen':
                     else:
                         st.warning("Kolom 'Pertemuan Ke' tidak ditemukan di data.")
 
-            # ── SUB TAB 2: UNDUH ────────────────────────────────
             with sub2:
                 st.markdown("##### Download Rekap Master Semester")
                 if df_makul.empty:
@@ -1174,14 +1200,12 @@ elif st.session_state['halaman'] == 'dosen':
                 else:
                     st.info("Belum ada data pertemuan tersedia.")
 
-            # ── SUB TAB 3: HAPUS ENTRI ──────────────────────────
             with sub3:
                 st.warning("⚠️ Gunakan fitur ini hanya untuk menghapus entri yang salah (NIM typo, dll).")
                 col_h1, col_h2 = st.columns(2)
                 with col_h1:
                     nim_hapus = st.text_input("NIM yang akan dihapus", placeholder="Contoh: 220101001")
                 with col_h2:
-                    # Tampilkan pertemuan yang memang ada datanya
                     if not df_makul.empty and 'Pertemuan Ke' in df_makul.columns:
                         prt_ada = sorted(
                             df_makul['Pertemuan Ke'].unique().tolist(),
